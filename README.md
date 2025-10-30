@@ -1,2 +1,2 @@
-# lance_certo
-Projeto Interdisciplinar do Segundo Semestre - Engenharia de Computação
+# Lance Certo
+Projeto Interdisciplinar do Segundo Semestre - Engenharia de Computação ---
