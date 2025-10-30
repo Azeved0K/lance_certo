@@ -1,0 +1,16 @@
+# Ignorar o ambiente virtual Python
+venv/
+*.pyc
+__pycache__/
+
+# Ignorar dependências do Node.js
+node_modules/
+dist/
+.env
+
+# Ignorar arquivos do Django
+/backend/db.sqlite3
+/backend/*.sqlite3
+
+# Ignorar logs do NPM
+npm-debug.log
