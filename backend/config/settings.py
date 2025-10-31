@@ -19,9 +19,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     
-    # Apps locais (criaremos depois)
-    # 'usuarios',
-    # 'momentos',
+    # Apps locais
+    'usuarios',
+    'momentos',
 ]
 
 MIDDLEWARE = [
@@ -88,6 +88,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+AUTH_USER_MODEL = 'usuarios.Usuario'
 
 # Internacionalização
 LANGUAGE_CODE = 'pt-br'

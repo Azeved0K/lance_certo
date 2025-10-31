@@ -119,7 +119,7 @@ const Home = ({ user, onLogout }) => {
             <div className={styles.hero}>
                 <div className="container">
                     <h1 className={styles.heroTitle}>
-                        Momentos Esportivos Incríveis ⚽🏀
+                        Lance Certo ⚽🏀
                     </h1>
                     <p className={styles.heroSubtitle}>
                         Reviva os melhores momentos do esporte capturados por fãs como você!
@@ -220,7 +220,7 @@ const Home = ({ user, onLogout }) => {
             {/* Footer */}
             <footer className={styles.footer}>
                 <div className="container text-center">
-                    <p>© 2024 Momentos Esportivos. Desenvolvido com ❤️ para os fãs de esporte.</p>
+                    <p>© 2025 Lance Certo - Desenvolvido com ❤️ para os fãs de esporte.</p>
                 </div>
             </footer>
         </>

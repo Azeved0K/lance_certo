@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: 'http://localhost:8000/api',
-    withCredentials: true, // Importante para sessões/cookies
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -17,7 +17,6 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-// Função para pegar cookie
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -49,22 +48,8 @@ export const momentosService = {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
     buscar: (id) => api.get(`/momentos/${id}/`),
-    atualizar: (id, data) => api.patch(`/momentos/${id}/`, data),
-    deletar: (id) => api.delete(`/momentos/${id}/`),
     like: (id) => api.post(`/momentos/${id}/like/`),
     unlike: (id) => api.delete(`/momentos/${id}/like/`),
-};
-
-// Funções de tags
-export const tagsService = {
-    listar: () => api.get('/tags/'),
-};
-
-// Funções de comentários
-export const comentariosService = {
-    listar: (momentoId) => api.get(`/momentos/${momentoId}/comentarios/`),
-    criar: (momentoId, data) => api.post(`/momentos/${momentoId}/comentarios/`, data),
-    deletar: (momentoId, comentarioId) => api.delete(`/momentos/${momentoId}/comentarios/${comentarioId}/`),
 };
 
 export default api;

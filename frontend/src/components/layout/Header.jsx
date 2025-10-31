@@ -24,7 +24,7 @@ const Header = ({ user, onLogout }) => {
                             </svg>
                         </div>
                         <span className={styles.logoText}>
-                            Momentos <span className={styles.logoHighlight}>Esportivos</span>
+                            Lance <span className={styles.logoHighlight}>Certo</span>
                         </span>
                     </Link>
 

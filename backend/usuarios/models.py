@@ -8,7 +8,20 @@ class Usuario(AbstractUser):
     data_nascimento = models.DateField(null=True, blank=True, verbose_name='Data de Nascimento')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
-    
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='usuario_set', # Nome único para os grupos
+        blank=True,
+        help_text='The groups this user belongs to.'
+    )
+
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='usuario_permissions', # Nome único para as permissões
+        blank=True,
+        help_text='Specific permissions for this user.'
+    )
+
     class Meta:
         verbose_name = 'Usuário'
         verbose_name_plural = 'Usuários'
