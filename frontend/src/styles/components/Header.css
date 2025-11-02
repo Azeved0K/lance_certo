@@ -247,6 +247,23 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
+.captureBtn {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(to right, #10B981, #059669); /* verde */
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 24px;
+    transition: all 0.2s;
+    border: none;
+}
+
+.captureBtn:hover {
+    background: linear-gradient(to right, #059669, #047857); /* verde mais escuro no hover */
+    box-shadow: 0 4px 12px rgba(4, 120, 87, 0.3);
+    transform: translateY(-2px);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .searchContainer {

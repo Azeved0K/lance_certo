@@ -1,28 +1,68 @@
-.container {
+.capture-container {
     min-height: calc(100vh - 64px);
     background: linear-gradient(135deg, var(--gray-900), var(--gray-800));
     color: white;
 }
 
-/* Header */
-.header {
+.capture-header {
     text-align: center;
     margin-bottom: 2rem;
 }
 
-.title {
+.capture-title {
     font-size: 2.5rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
 }
 
-.subtitle {
+.capture-subtitle {
     font-size: 1.125rem;
     color: var(--gray-400);
 }
 
+/* Seletor de modo */
+.mode-selector {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.mode-btn {
+    padding: 1rem 2rem;
+    background: var(--gray-800);
+    color: white;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.mode-btn:hover {
+    background: var(--gray-700);
+}
+
+.mode-btn.active {
+    border-color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.2);
+}
+
+/* Error box */
+.error-box {
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 2px solid var(--danger-color);
+    border-radius: 8px;
+    color: var(--danger-color);
+    margin-bottom: 1rem;
+    text-align: center;
+    font-weight: 600;
+}
+
 /* Capture Card */
-.captureCard {
+.capture-card {
     max-width: 1000px;
     margin: 0 auto;
     background: var(--gray-800);
@@ -31,8 +71,8 @@
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-/* Preview */
-.preview {
+/* Preview Area */
+.preview-area {
     position: relative;
     aspect-ratio: 16 / 9;
     background: linear-gradient(135deg, var(--gray-700), var(--gray-900));
@@ -41,7 +81,14 @@
     justify-content: center;
 }
 
-.recordingBadge {
+.video-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: black;
+}
+
+.recording-badge {
     position: absolute;
     top: 1rem;
     left: 1rem;
@@ -54,6 +101,7 @@
     font-weight: 700;
     font-size: 0.875rem;
     animation: pulse 2s ease-in-out infinite;
+    z-index: 10;
 }
 
 @keyframes pulse {
@@ -68,34 +116,34 @@
     }
 }
 
-.recordingDot {
+.recording-dot {
     width: 12px;
     height: 12px;
     background: white;
     border-radius: 50%;
 }
 
-.placeholderContent {
+.placeholder-content {
     text-align: center;
 }
 
-.cameraIcon {
+.camera-icon {
     color: var(--gray-600);
     margin-bottom: 1rem;
 }
 
-.placeholderText {
+.placeholder-text {
     font-size: 1.25rem;
     color: var(--gray-400);
     margin-bottom: 0.5rem;
 }
 
-.placeholderSmall {
+.placeholder-small {
     font-size: 0.875rem;
     color: var(--gray-500);
 }
 
-.bufferBadge {
+.buffer-badge {
     position: absolute;
     bottom: 1rem;
     right: 1rem;
@@ -107,19 +155,16 @@
     font-family: monospace;
 }
 
-.previewImage {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.playOverlay {
+.video-info-badge {
     position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    bottom: 1rem;
+    left: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
 }
 
 /* Controls */
@@ -128,13 +173,13 @@
     background: var(--gray-900);
 }
 
-.controlsMain {
+.controls-main {
     display: flex;
     justify-content: center;
     margin-bottom: 2rem;
 }
 
-.btnRecord {
+.btn-record {
     display: inline-flex;
     align-items: center;
     gap: 0.75rem;
@@ -150,13 +195,13 @@
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
-.btnRecord:hover {
+.btn-record:hover {
     background: var(--danger-hover);
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(239, 68, 68, 0.5);
 }
 
-.btnStop {
+.btn-stop {
     display: inline-flex;
     align-items: center;
     gap: 0.75rem;
@@ -171,19 +216,19 @@
     transition: all 0.3s;
 }
 
-.btnStop:hover {
+.btn-stop:hover {
     background: var(--gray-600);
     transform: translateY(-2px);
 }
 
-.infoBox {
+.info-box {
     padding: 1.5rem;
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.3);
     border-radius: 12px;
 }
 
-.infoTitle {
+.info-title {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -192,19 +237,19 @@
     margin-bottom: 0.75rem;
 }
 
-.infoList {
+.info-list {
     list-style: none;
     font-size: 0.875rem;
     color: var(--gray-300);
 }
 
-.infoList li {
+.info-list li {
     padding-left: 1.5rem;
     position: relative;
     margin-bottom: 0.5rem;
 }
 
-.infoList li::before {
+.info-list li::before {
     content: '•';
     position: absolute;
     left: 0.5rem;
@@ -212,18 +257,19 @@
 }
 
 /* Preview Actions */
-.successTitle {
+.success-title {
     font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 1rem;
+    text-align: center;
 }
 
-.previewActions {
+.preview-actions {
     display: flex;
     gap: 1rem;
 }
 
-.btnPublish {
+.btn-publish {
     flex: 1;
     display: flex;
     align-items: center;
@@ -239,12 +285,12 @@
     transition: all 0.2s;
 }
 
-.btnPublish:hover {
+.btn-publish:hover {
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     transform: translateY(-2px);
 }
 
-.btnDiscard {
+.btn-discard {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -258,39 +304,8 @@
     transition: all 0.2s;
 }
 
-.btnDiscard:hover {
+.btn-discard:hover {
     background: var(--danger-hover);
-}
-
-/* Tips */
-.tips {
-    max-width: 1000px;
-    margin: 2rem auto 0;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-}
-
-.tipCard {
-    background: var(--gray-800);
-    padding: 1.5rem;
-    border-radius: 12px;
-}
-
-.tipIcon {
-    font-size: 2rem;
-    margin-bottom: 0.75rem;
-}
-
-.tipTitle {
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-}
-
-.tipText {
-    font-size: 0.875rem;
-    color: var(--gray-400);
 }
 
 /* Modal */
@@ -305,7 +320,7 @@
     padding: 1rem;
 }
 
-.modalContent {
+.modal-content {
     background: white;
     border-radius: 16px;
     max-width: 500px;
@@ -315,7 +330,7 @@
     color: var(--gray-900);
 }
 
-.modalHeader {
+.modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -323,12 +338,12 @@
     border-bottom: 1px solid var(--gray-200);
 }
 
-.modalTitle {
+.modal-title {
     font-size: 1.5rem;
     font-weight: 700;
 }
 
-.modalClose {
+.modal-close {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -339,39 +354,40 @@
     color: var(--gray-500);
     cursor: pointer;
     border-radius: 8px;
+    font-size: 1.5rem;
     transition: all 0.2s;
 }
 
-.modalClose:hover {
+.modal-close:hover {
     background: var(--gray-100);
     color: var(--gray-700);
 }
 
-.modalForm {
+.modal-form {
     padding: 1.5rem;
 }
 
-.modalActions {
+.modal-actions {
     display: flex;
     gap: 1rem;
     margin-top: 1.5rem;
 }
 
-.modalActions button {
+.modal-actions button {
     flex: 1;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .title {
+    .capture-title {
         font-size: 2rem;
     }
 
-    .tips {
-        grid-template-columns: 1fr;
+    .preview-actions {
+        flex-direction: column;
     }
 
-    .previewActions {
+    .mode-selector {
         flex-direction: column;
     }
 }

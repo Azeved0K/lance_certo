@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import styles from '../../styles/components/MomentoCard.module.css';
+import '../../styles/components/MomentoCard.css';
 
 const MomentoCard = ({ momento, onLike }) => {
     const [liked, setLiked] = useState(false);
@@ -23,53 +23,53 @@ const MomentoCard = ({ momento, onLike }) => {
     };
 
     return (
-        <div className={styles.card}>
+        <div className="card">
             {/* Thumbnail */}
-            <div className={styles.thumbnail}>
+            <div className="thumbnail">
                 <img src={momento.thumbnail} alt={momento.titulo} />
-                <div className={styles.overlay}>
-                    <svg className={styles.playIcon} width="48" height="48" viewBox="0 0 24 24" fill="none">
+                <div className="overlay">
+                    <svg className="playIcon" width="48" height="48" viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="10" fill="white" opacity="0.9" />
                         <path d="M10 8l6 4-6 4V8z" fill="#3B82F6" />
                     </svg>
                 </div>
-                <div className={styles.duration}>{momento.duracao}</div>
+                <div className="duration">{momento.duracao}</div>
                 {momento.tags && momento.tags.length > 0 && (
-                    <div className={styles.tags}>
+                    <div className="tags">
                         {momento.tags.slice(0, 2).map((tag, index) => (
-                            <span key={index} className={styles.tag}>{tag}</span>
+                            <span key={index} className="tag">{tag}</span>
                         ))}
                     </div>
                 )}
             </div>
 
             {/* Content */}
-            <div className={styles.content}>
-                <h3 className={styles.title}>{momento.titulo}</h3>
-                <p className={styles.description}>{momento.descricao}</p>
+            <div className="content">
+                <h3 className="title">{momento.titulo}</h3>
+                <p className="description">{momento.descricao}</p>
 
                 {/* User */}
-                <div className={styles.user}>
+                <div className="user">
                     <img
                         src={momento.usuario?.avatar || `https://ui-avatars.com/api/?name=${momento.usuario?.nome}&background=3B82F6&color=fff`}
                         alt={momento.usuario?.nome}
-                        className={styles.avatar}
+                        className="avatar"
                     />
-                    <span className={styles.username}>{momento.usuario?.nome}</span>
-                    <span className={styles.date}>{formatDate(momento.data)}</span>
+                    <span className="username">{momento.usuario?.nome}</span>
+                    <span className="date">{formatDate(momento.data)}</span>
                 </div>
 
                 {/* Stats */}
-                <div className={styles.stats}>
-                    <div className={styles.statsLeft}>
-                        <div className={styles.stat}>
+                <div className="stats">
+                    <div className="statsLeft">
+                        <div className="stat">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="2" />
                                 <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
                             </svg>
                             <span>{formatViews(momento.views)}</span>
                         </div>
-                        <div className={styles.stat}>
+                        <div className="stat">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'}>
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" />
                             </svg>
@@ -77,16 +77,16 @@ const MomentoCard = ({ momento, onLike }) => {
                         </div>
                     </div>
 
-                    <div className={styles.actions}>
+                    <div className="actions">
                         <button
                             onClick={handleLike}
-                            className={`${styles.actionBtn} ${liked ? styles.liked : ''}`}
+                            className={`$"actionBtn" ${liked ? "liked" : ''}`}
                         >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'}>
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" />
                             </svg>
                         </button>
-                        <button className={styles.actionBtn}>
+                        <button className="actionBtn">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                 <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2" />
                                 <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2" />

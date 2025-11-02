@@ -1,35 +1,205 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
-import styles from '../styles/pages/Capture.module.css';
+import { momentosService } from '../services/api';
+import '../styles/pages/Capture.css';
 
 const Capture = ({ user, onLogout }) => {
     const navigate = useNavigate();
+    const videoRef = useRef(null);
+    const mediaRecorderRef = useRef(null);
+    const chunksRef = useRef([]);
+    const streamRef = useRef(null);
+
     const [isRecording, setIsRecording] = useState(false);
     const [recordedVideo, setRecordedVideo] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [captureMode, setCaptureMode] = useState('screen'); // 'screen' ou 'camera'
+    const [error, setError] = useState('');
     const [uploadData, setUploadData] = useState({
         titulo: '',
         descricao: '',
         tags: ''
     });
 
-    // Simula início da gravação
-    const handleStartRecording = () => {
-        setIsRecording(true);
-        // Futuramente: iniciar MediaRecorder
+    const BUFFER_DURATION = 60000; // 60 segundos em ms
+    const CHUNK_DURATION = 1000; // 1 segundo por chunk
+
+    // Cleanup ao desmontar componente
+    useEffect(() => {
+        return () => {
+            stopStream();
+        };
+    }, []);
+
+    // Iniciar captura de tela ou câmera
+    const startCapture = async () => {
+        try {
+            setError('');
+            let stream;
+
+            if (captureMode === 'screen') {
+                // Captura de tela
+                stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: 'always',
+                        displaySurface: 'monitor'
+                    },
+                    audio: true // Captura áudio do sistema (opcional)
+                });
+            } else {
+                // Captura de câmera
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: true
+                });
+            }
+
+            streamRef.current = stream;
+
+            // Mostrar preview no video element
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                videoRef.current.play();
+            }
+
+            // Configurar MediaRecorder
+            const options = {
+                mimeType: 'video/webm;codecs=vp9,opus',
+                videoBitsPerSecond: 2500000 // 2.5 Mbps
+            };
+
+            // Fallback para navegadores que não suportam VP9
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options.mimeType = 'video/webm';
+            }
+
+            const mediaRecorder = new MediaRecorder(stream, options);
+            mediaRecorderRef.current = mediaRecorder;
+
+            // Array para armazenar chunks
+            chunksRef.current = [];
+
+            // Evento: dados disponíveis (a cada 1 segundo)
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    chunksRef.current.push({
+                        data: event.data,
+                        timestamp: Date.now()
+                    });
+
+                    // Manter apenas últimos 60 segundos
+                    const now = Date.now();
+                    chunksRef.current = chunksRef.current.filter(
+                        chunk => now - chunk.timestamp <= BUFFER_DURATION
+                    );
+                }
+            };
+
+            // Evento: parou de gravar
+            mediaRecorder.onstop = () => {
+                console.log('Gravação finalizada');
+            };
+
+            // Evento: erro
+            mediaRecorder.onerror = (event) => {
+                console.error('Erro no MediaRecorder:', event.error);
+                setError('Erro ao gravar vídeo');
+            };
+
+            // Iniciar gravação (com chunks a cada 1 segundo)
+            mediaRecorder.start(CHUNK_DURATION);
+            setIsRecording(true);
+
+            // Detectar quando usuário para de compartilhar tela
+            stream.getVideoTracks()[0].onended = () => {
+                handleStopRecording();
+            };
+
+        } catch (err) {
+            console.error('Erro ao capturar:', err);
+            if (err.name === 'NotAllowedError') {
+                setError('Permissão negada. Autorize o acesso à tela/câmera.');
+            } else if (err.name === 'NotFoundError') {
+                setError('Nenhum dispositivo de captura encontrado.');
+            } else {
+                setError('Erro ao iniciar captura: ' + err.message);
+            }
+        }
     };
 
-    // Simula parar a gravação
+    // Parar gravação e gerar vídeo
     const handleStopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+        }
+
         setIsRecording(false);
-        // Simula vídeo gravado
-        setRecordedVideo({
-            url: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&h=600&fit=crop',
-            duration: '00:45'
-        });
+
+        // Gerar vídeo dos últimos 60 segundos
+        setTimeout(() => {
+            generateVideo();
+        }, 500);
     };
 
+    // Gerar vídeo a partir dos chunks
+    const generateVideo = () => {
+        if (chunksRef.current.length === 0) {
+            setError('Nenhum dado gravado');
+            return;
+        }
+
+        // Pegar apenas os chunks de vídeo (sem o timestamp)
+        const videoChunks = chunksRef.current.map(chunk => chunk.data);
+
+        // Criar blob do vídeo
+        const mimeType = mediaRecorderRef.current?.mimeType || 'video/webm';
+        const blob = new Blob(videoChunks, { type: mimeType });
+
+        // Criar URL para preview
+        const videoUrl = URL.createObjectURL(blob);
+
+        // Calcular duração aproximada
+        const duration = Math.round(chunksRef.current.length * (CHUNK_DURATION / 1000));
+
+        setRecordedVideo({
+            blob,
+            url: videoUrl,
+            duration: `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`,
+            size: (blob.size / (1024 * 1024)).toFixed(2) // Tamanho em MB
+        });
+
+        // Parar stream
+        stopStream();
+    };
+
+    // Parar stream de captura
+    const stopStream = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+    };
+
+    // Descartar vídeo
+    const handleDiscard = () => {
+        if (window.confirm('Descartar este momento?')) {
+            if (recordedVideo?.url) {
+                URL.revokeObjectURL(recordedVideo.url);
+            }
+            setRecordedVideo(null);
+            chunksRef.current = [];
+        }
+    };
+
+    // Abrir modal de upload
     const handleOpenUpload = () => {
         setShowUploadModal(true);
     };
@@ -39,17 +209,52 @@ const Capture = ({ user, onLogout }) => {
         setUploadData({ titulo: '', descricao: '', tags: '' });
     };
 
+    // Upload do vídeo
     const handleUpload = async (e) => {
         e.preventDefault();
-        // Futuramente: enviar para API
-        console.log('Upload:', uploadData);
-        alert('Momento publicado com sucesso!');
-        navigate('/');
-    };
 
-    const handleDiscard = () => {
-        if (window.confirm('Descartar este momento?')) {
-            setRecordedVideo(null);
+        if (!recordedVideo?.blob) {
+            alert('Nenhum vídeo para enviar');
+            return;
+        }
+
+        try {
+            // Criar FormData para enviar arquivo
+            const formData = new FormData();
+
+            // Adicionar vídeo
+            const videoFile = new File(
+                [recordedVideo.blob],
+                `momento-${Date.now()}.webm`,
+                { type: recordedVideo.blob.type }
+            );
+            formData.append('video', videoFile);
+
+            // Adicionar outros dados
+            formData.append('titulo', uploadData.titulo);
+            formData.append('descricao', uploadData.descricao);
+            formData.append('duracao', Math.round(chunksRef.current.length * (CHUNK_DURATION / 1000)));
+
+            // Tags (separar por vírgula)
+            if (uploadData.tags) {
+                const tagsArray = uploadData.tags.split(',').map(t => t.trim());
+                formData.append('tags', JSON.stringify(tagsArray));
+            }
+
+            // Enviar para API
+            await momentosService.criar(formData);
+
+            alert('Momento publicado com sucesso!');
+
+            // Limpar
+            if (recordedVideo?.url) {
+                URL.revokeObjectURL(recordedVideo.url);
+            }
+
+            navigate('/');
+        } catch (error) {
+            console.error('Erro ao enviar:', error);
+            alert('Erro ao publicar momento: ' + (error.response?.data?.message || error.message));
         }
     };
 
@@ -57,57 +262,90 @@ const Capture = ({ user, onLogout }) => {
         <>
             <Header user={user} onLogout={onLogout} />
 
-            <div className={styles.container}>
+            <div className="capture-container">
                 <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-                    {/* Title */}
-                    <div className={styles.header}>
-                        <h1 className={styles.title}>🎥 Capturar Momento</h1>
-                        <p className={styles.subtitle}>
+                    {/* Header */}
+                    <div className="capture-header">
+                        <h1 className="capture-title">🎥 Capturar Lance</h1>
+                        <p className="capture-subtitle">
                             Grave os últimos 60 segundos de ação ao vivo
                         </p>
                     </div>
 
-                    {/* Capture Area */}
-                    <div className={styles.captureCard}>
+                    {/* Seletor de modo */}
+                    {!isRecording && !recordedVideo && (
+                        <div className="mode-selector">
+                            <button
+                                onClick={() => setCaptureMode('screen')}
+                                className={`mode-btn ${captureMode === 'screen' ? 'active' : ''}`}
+                            >
+                                🖥️ Capturar Tela
+                            </button>
+                            <button
+                                onClick={() => setCaptureMode('camera')}
+                                className={`mode-btn ${captureMode === 'camera' ? 'active' : ''}`}
+                            >
+                                📹 Usar Câmera
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Erro */}
+                    {error && (
+                        <div className="error-box">
+                            ⚠️ {error}
+                        </div>
+                    )}
+
+                    {/* Área de captura */}
+                    <div className="capture-card">
                         {!recordedVideo ? (
-                            /* Recording Mode */
                             <>
-                                <div className={styles.preview}>
+                                <div className="preview-area">
                                     {isRecording && (
-                                        <div className={styles.recordingBadge}>
-                                            <div className={styles.recordingDot}></div>
+                                        <div className="recording-badge">
+                                            <div className="recording-dot"></div>
                                             <span>GRAVANDO</span>
                                         </div>
                                     )}
 
-                                    <div className={styles.placeholderContent}>
-                                        <svg className={styles.cameraIcon} width="80" height="80" viewBox="0 0 24 24" fill="none">
-                                            <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-                                            <circle cx="9" cy="12" r="2" stroke="currentColor" strokeWidth="2" />
-                                            <path d="M15 9l4-2v10l-4-2" stroke="currentColor" strokeWidth="2" />
-                                        </svg>
-                                        <p className={styles.placeholderText}>
-                                            {isRecording ? 'Capturando ao vivo...' : 'Pronto para capturar'}
-                                        </p>
-                                        <p className={styles.placeholderSmall}>
-                                            (MediaRecorder API será implementada aqui)
-                                        </p>
-                                    </div>
+                                    <video
+                                        ref={videoRef}
+                                        autoPlay
+                                        muted
+                                        playsInline
+                                        className="video-preview"
+                                        style={{ display: isRecording ? 'block' : 'none' }}
+                                    />
 
-                                    <div className={styles.bufferBadge}>Buffer: 60s</div>
+                                    {!isRecording && (
+                                        <div className="placeholder-content">
+                                            <svg className="camera-icon" width="80" height="80" viewBox="0 0 24 24" fill="none">
+                                                <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+                                                <circle cx="9" cy="12" r="2" stroke="currentColor" strokeWidth="2" />
+                                                <path d="M15 9l4-2v10l-4-2" stroke="currentColor" strokeWidth="2" />
+                                            </svg>
+                                            <p className="placeholder-text">Pronto para capturar</p>
+                                            <p className="placeholder-small">
+                                                {captureMode === 'screen' ? '🖥️ Modo: Captura de Tela' : '📹 Modo: Câmera'}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="buffer-badge">Buffer: 60s</div>
                                 </div>
 
-                                <div className={styles.controls}>
-                                    <div className={styles.controlsMain}>
+                                <div className="controls">
+                                    <div className="controls-main">
                                         {!isRecording ? (
-                                            <button onClick={handleStartRecording} className={styles.btnRecord}>
+                                            <button onClick={startCapture} className="btn-record">
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                                    <path d="M5 3l14 9-14 9V3z" fill="currentColor" />
+                                                    <circle cx="12" cy="12" r="10" fill="currentColor" />
                                                 </svg>
                                                 Iniciar Gravação
                                             </button>
                                         ) : (
-                                            <button onClick={handleStopRecording} className={styles.btnStop}>
+                                            <button onClick={handleStopRecording} className="btn-stop">
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                                     <rect x="6" y="6" width="12" height="12" fill="currentColor" />
                                                 </svg>
@@ -116,12 +354,9 @@ const Capture = ({ user, onLogout }) => {
                                         )}
                                     </div>
 
-                                    <div className={styles.infoBox}>
-                                        <h3 className={styles.infoTitle}>
-                                            <span>💡</span>
-                                            Como funciona:
-                                        </h3>
-                                        <ul className={styles.infoList}>
+                                    <div className="info-box">
+                                        <h3 className="info-title">💡 Como funciona:</h3>
+                                        <ul className="info-list">
                                             <li>Mantemos um buffer dos últimos 60 segundos</li>
                                             <li>Clique em "Parar e Salvar" no momento exato</li>
                                             <li>O vídeo salvo conterá os 60s anteriores ao clique</li>
@@ -130,32 +365,26 @@ const Capture = ({ user, onLogout }) => {
                                 </div>
                             </>
                         ) : (
-                            /* Preview Mode */
                             <>
-                                <div className={styles.preview}>
-                                    <img src={recordedVideo.url} alt="Preview" className={styles.previewImage} />
-                                    <div className={styles.playOverlay}>
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
-                                            <circle cx="12" cy="12" r="10" fill="white" opacity="0.9" />
-                                            <path d="M10 8l6 4-6 4V8z" fill="#3B82F6" />
-                                        </svg>
+                                <div className="preview-area">
+                                    <video
+                                        src={recordedVideo.url}
+                                        controls
+                                        className="video-preview"
+                                        style={{ display: 'block' }}
+                                    />
+                                    <div className="video-info-badge">
+                                        {recordedVideo.duration} • {recordedVideo.size} MB
                                     </div>
-                                    <div className={styles.bufferBadge}>{recordedVideo.duration}</div>
                                 </div>
 
-                                <div className={styles.controls}>
-                                    <h3 className={styles.successTitle}>Momento capturado!</h3>
-                                    <div className={styles.previewActions}>
-                                        <button onClick={handleOpenUpload} className={styles.btnPublish}>
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" />
-                                            </svg>
-                                            Publicar Momento
+                                <div className="controls">
+                                    <h3 className="success-title">✅ Lance capturado!</h3>
+                                    <div className="preview-actions">
+                                        <button onClick={handleOpenUpload} className="btn-publish">
+                                            Publicar Lance
                                         </button>
-                                        <button onClick={handleDiscard} className={styles.btnDiscard}>
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                                                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" />
-                                            </svg>
+                                        <button onClick={handleDiscard} className="btn-discard">
                                             Descartar
                                         </button>
                                     </div>
@@ -163,44 +392,21 @@ const Capture = ({ user, onLogout }) => {
                             </>
                         )}
                     </div>
-
-                    {/* Tips */}
-                    <div className={styles.tips}>
-                        <div className={styles.tipCard}>
-                            <div className={styles.tipIcon}>⚡</div>
-                            <h3 className={styles.tipTitle}>Capture Rápido</h3>
-                            <p className={styles.tipText}>Salve apenas o momento certo, sem gravar tudo</p>
-                        </div>
-                        <div className={styles.tipCard}>
-                            <div className={styles.tipIcon}>🎯</div>
-                            <h3 className={styles.tipTitle}>60 Segundos</h3>
-                            <p className={styles.tipText}>Buffer automático dos últimos momentos</p>
-                        </div>
-                        <div className={styles.tipCard}>
-                            <div className={styles.tipIcon}>☁️</div>
-                            <h3 className={styles.tipTitle}>Upload Seguro</h3>
-                            <p className={styles.tipText}>Seus vídeos salvos na nuvem</p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            {/* Upload Modal */}
+            {/* Modal Upload */}
             {showUploadModal && (
-                <div className={styles.modal} onClick={handleCloseModal}>
-                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h2 className={styles.modalTitle}>Publicar Momento</h2>
-                            <button onClick={handleCloseModal} className={styles.modalClose}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" />
-                                </svg>
-                            </button>
+                <div className="modal" onClick={handleCloseModal}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Publicar Lance</h2>
+                            <button onClick={handleCloseModal} className="modal-close">×</button>
                         </div>
 
-                        <form onSubmit={handleUpload} className={styles.modalForm}>
+                        <form onSubmit={handleUpload} className="modal-form">
                             <div className="input-group">
-                                <label className="input-label">Título do Momento</label>
+                                <label className="input-label">Título do Lance</label>
                                 <input
                                     type="text"
                                     required
@@ -215,7 +421,7 @@ const Capture = ({ user, onLogout }) => {
                                 <label className="input-label">Descrição (opcional)</label>
                                 <textarea
                                     rows="3"
-                                    placeholder="Conte mais sobre este momento..."
+                                    placeholder="Conte mais sobre este lance..."
                                     value={uploadData.descricao}
                                     onChange={(e) => setUploadData({ ...uploadData, descricao: e.target.value })}
                                     className="input-field"
@@ -226,17 +432,14 @@ const Capture = ({ user, onLogout }) => {
                                 <label className="input-label">Tags</label>
                                 <input
                                     type="text"
-                                    placeholder="Ex: futebol, gol, brasil (separadas por vírgula)"
+                                    placeholder="Ex: futebol, gol, brasil"
                                     value={uploadData.tags}
                                     onChange={(e) => setUploadData({ ...uploadData, tags: e.target.value })}
                                     className="input-field"
                                 />
-                                <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
-                                    Use vírgulas para separar as tags
-                                </p>
                             </div>
 
-                            <div className={styles.modalActions}>
+                            <div className="modal-actions">
                                 <button type="button" onClick={handleCloseModal} className="btn btn-outline">
                                     Cancelar
                                 </button>
