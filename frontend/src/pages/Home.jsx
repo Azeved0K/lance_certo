@@ -88,7 +88,6 @@ const Home = ({ user, onLogout }) => {
     const [momentos, setMomentos] = useState(mockMomentos);
 
     useEffect(() => {
-        // Futuramente: buscar momentos da API
         filterAndSort();
     }, [selectedTag, sortBy]);
 
@@ -108,7 +107,6 @@ const Home = ({ user, onLogout }) => {
 
     const handleLike = (momentoId, liked) => {
         console.log(`Momento ${momentoId} ${liked ? 'curtido' : 'descurtido'}`);
-        // Futuramente: chamar API
     };
 
     return (
@@ -137,7 +135,7 @@ const Home = ({ user, onLogout }) => {
                                 <button
                                     key={tag}
                                     onClick={() => setSelectedTag(tag)}
-                                    className={`$"tag" ${selectedTag === tag ? "tagActive" : ''}`}
+                                    className={`tag ${selectedTag === tag ? 'tagActive' : ''}`}
                                 >
                                     {tag}
                                 </button>
@@ -160,7 +158,7 @@ const Home = ({ user, onLogout }) => {
                         <div className="sortButtons">
                             <button
                                 onClick={() => setSortBy('recent')}
-                                className={`$"sortBtn" ${sortBy === 'recent' ? "sortBtnActive" : ''}`}
+                                className={`sortBtn ${sortBy === 'recent' ? 'sortBtnActive' : ''}`}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
@@ -170,7 +168,7 @@ const Home = ({ user, onLogout }) => {
                             </button>
                             <button
                                 onClick={() => setSortBy('trending')}
-                                className={`$"sortBtn" ${sortBy === 'trending' ? "sortBtnActive" : ''}`}
+                                className={`sortBtn ${sortBy === 'trending' ? 'sortBtnActive' : ''}`}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" />
@@ -179,7 +177,7 @@ const Home = ({ user, onLogout }) => {
                             </button>
                             <button
                                 onClick={() => setSortBy('popular')}
-                                className={`$"sortBtn" ${sortBy === 'popular' ? "sortBtnActive" : ''}`}
+                                className={`sortBtn ${sortBy === 'popular' ? 'sortBtnActive' : ''}`}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" />
@@ -219,7 +217,7 @@ const Home = ({ user, onLogout }) => {
 
             {/* Footer */}
             <footer className="footer">
-                <div className="container text-center">
+                <div className="container" style={{ textAlign: 'center' }}>
                     <p>© 2025 Lance Certo - Desenvolvido com ❤️ para os fãs de esporte.</p>
                 </div>
             </footer>
