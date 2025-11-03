@@ -14,7 +14,6 @@ const Capture = ({ user, onLogout }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [recordedVideo, setRecordedVideo] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const [captureMode, setCaptureMode] = useState('screen'); // 'screen' ou 'camera'
     const [error, setError] = useState('');
     const [uploadData, setUploadData] = useState({
         titulo: '',
@@ -32,31 +31,20 @@ const Capture = ({ user, onLogout }) => {
         };
     }, []);
 
-    // Iniciar captura de tela ou câmera
+    // Iniciar captura de câmera
     const startCapture = async () => {
         try {
             setError('');
-            let stream;
 
-            if (captureMode === 'screen') {
-                // Captura de tela
-                stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: {
-                        cursor: 'always',
-                        displaySurface: 'monitor'
-                    },
-                    audio: true // Captura áudio do sistema (opcional)
-                });
-            } else {
-                // Captura de câmera
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    },
-                    audio: true
-                });
-            }
+            // Captura de câmera com melhor qualidade
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    facingMode: 'user' // Câmera frontal por padrão
+                },
+                audio: true
+            });
 
             streamRef.current = stream;
 
@@ -114,17 +102,12 @@ const Capture = ({ user, onLogout }) => {
             mediaRecorder.start(CHUNK_DURATION);
             setIsRecording(true);
 
-            // Detectar quando usuário para de compartilhar tela
-            stream.getVideoTracks()[0].onended = () => {
-                handleStopRecording();
-            };
-
         } catch (err) {
             console.error('Erro ao capturar:', err);
             if (err.name === 'NotAllowedError') {
-                setError('Permissão negada. Autorize o acesso à tela/câmera.');
+                setError('Permissão negada. Autorize o acesso à câmera.');
             } else if (err.name === 'NotFoundError') {
-                setError('Nenhum dispositivo de captura encontrado.');
+                setError('Nenhuma câmera encontrada.');
             } else {
                 setError('Erro ao iniciar captura: ' + err.message);
             }
@@ -268,27 +251,9 @@ const Capture = ({ user, onLogout }) => {
                     <div className="capture-header">
                         <h1 className="capture-title">🎥 Capturar Lance</h1>
                         <p className="capture-subtitle">
-                            Grave os últimos 60 segundos de ação ao vivo
+                            Grave os últimos 60 segundos de ação ao vivo da sua câmera
                         </p>
                     </div>
-
-                    {/* Seletor de modo */}
-                    {!isRecording && !recordedVideo && (
-                        <div className="mode-selector">
-                            <button
-                                onClick={() => setCaptureMode('screen')}
-                                className={`mode-btn ${captureMode === 'screen' ? 'active' : ''}`}
-                            >
-                                🖥️ Capturar Tela
-                            </button>
-                            <button
-                                onClick={() => setCaptureMode('camera')}
-                                className={`mode-btn ${captureMode === 'camera' ? 'active' : ''}`}
-                            >
-                                📹 Usar Câmera
-                            </button>
-                        </div>
-                    )}
 
                     {/* Erro */}
                     {error && (
@@ -327,7 +292,7 @@ const Capture = ({ user, onLogout }) => {
                                             </svg>
                                             <p className="placeholder-text">Pronto para capturar</p>
                                             <p className="placeholder-small">
-                                                {captureMode === 'screen' ? '🖥️ Modo: Captura de Tela' : '📹 Modo: Câmera'}
+                                                📹 Modo: Captura de Câmera
                                             </p>
                                         </div>
                                     )}

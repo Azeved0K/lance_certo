@@ -120,12 +120,12 @@ const Login = () => {
                     </button>
                 </form>
 
-                {/* Divider */}
+                {/* Divider
                 <div className="divider">
                     <span>Ou continue com</span>
-                </div>
+                </div> */}
 
-                {/* Social Login */}
+                {/* Social Login
                 <div className="socialButtons">
                     <button className="socialBtn" type="button">
                         <svg width="20" height="20" viewBox="0 0 24 24">
@@ -142,7 +142,7 @@ const Login = () => {
                         </svg>
                         Facebook
                     </button>
-                </div>
+                </div> */}
 
                 {/* Register Link */}
                 <p className="authFooter">

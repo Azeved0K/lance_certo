@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import '../../styles/components/Header.css';
@@ -5,10 +6,19 @@ import '../../styles/components/Header.css';
 const Header = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const [searchQuery, setSearchQuery] = useState('');
 
     const handleLogout = async () => {
         await logout();
         navigate('/login');
+    };
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            // Navegar para Home com parâmetro de busca
+            navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+        }
     };
 
     return (
@@ -30,17 +40,21 @@ const Header = () => {
 
                     {/* Search Bar */}
                     {user && (
-                        <div className="searchContainer">
+                        <form onSubmit={handleSearch} className="searchContainer">
                             <input
                                 type="text"
                                 placeholder="Buscar momentos incriveis..."
                                 className="searchInput"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                            <svg className="searchIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <circle cx="11" cy="11" r="8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </div>
+                            <button type="submit" className="searchButton">
+                                <svg className="searchIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="11" cy="11" r="8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </button>
+                        </form>
                     )}
 
                     {/* Navigation */}

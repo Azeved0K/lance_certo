@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import Capture from './pages/Capture';
+import Profile from './pages/Profile';
 
 // Componente interno que usa o contexto
 function AppRoutes() {
@@ -30,6 +31,10 @@ function AppRoutes() {
       <Route
         path="/capture"
         element={user ? <Capture /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/profile"
+        element={user ? <Profile /> : <Navigate to="/login" />}
       />
 
       {/* Rota 404 */}

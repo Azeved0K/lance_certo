@@ -180,12 +180,12 @@ const Register = () => {
                     </button>
                 </form>
 
-                {/* Divider */}
+                {/* Divider
                 <div className="divider">
                     <span>Ou cadastre-se com</span>
-                </div>
+                </div> */}
 
-                {/* Social Login */}
+                {/* Social Login
                 <div className="socialButtons">
                     <button className="socialBtn">
                         <svg width="20" height="20" viewBox="0 0 24 24">
@@ -202,7 +202,7 @@ const Register = () => {
                         </svg>
                         Facebook
                     </button>
-                </div>
+                </div> */}
 
                 {/* Login Link */}
                 <p className="authFooter">

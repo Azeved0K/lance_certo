@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/layout/Header';
 import MomentoCard from '../components/gallery/MomentoCard';
@@ -10,6 +10,9 @@ const mockTags = ['Todos', 'Futebol', 'Basquete', 'Volei', 'Gol', 'Defesa', 'Dri
 
 const Home = () => {
     const { user, logout } = useAuth();
+    const [searchParams] = useSearchParams();
+    const searchQuery = searchParams.get('search') || '';
+
     const [selectedTag, setSelectedTag] = useState('Todos');
     const [sortBy, setSortBy] = useState('recent');
     const [momentos, setMomentos] = useState([]);
@@ -18,7 +21,7 @@ const Home = () => {
 
     useEffect(() => {
         fetchMomentos();
-    }, [selectedTag, sortBy]);
+    }, [selectedTag, sortBy, searchQuery]);
 
     const fetchMomentos = async () => {
         try {
@@ -33,10 +36,30 @@ const Home = () => {
                 params.tag = selectedTag.toLowerCase();
             }
 
+            // Adicionar parâmetro de busca se existir
+            if (searchQuery) {
+                params.search = searchQuery;
+            }
+
             const response = await momentosService.listar(params);
             const data = response.data || [];
-            setMomentos(Array.isArray(data) ? data : []);
-            console.log('Momentos carregados:', data);
+
+            // Se houver busca, filtrar localmente também (fallback)
+            let filteredData = Array.isArray(data) ? data : [];
+
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filteredData = filteredData.filter(momento =>
+                    momento.titulo?.toLowerCase().includes(query) ||
+                    momento.descricao?.toLowerCase().includes(query) ||
+                    momento.tags?.some(tag =>
+                        (typeof tag === 'string' ? tag : tag.nome)?.toLowerCase().includes(query)
+                    )
+                );
+            }
+
+            setMomentos(filteredData);
+            console.log('Momentos carregados:', filteredData);
         } catch (err) {
             console.error('Erro ao carregar momentos:', err);
             setError('Erro ao carregar momentos');
@@ -59,7 +82,6 @@ const Home = () => {
         }
     };
 
-    // ✅ NOVO: Callback para remover momento da lista após exclusão
     const handleDelete = (momentoId) => {
         setMomentos(prevMomentos => prevMomentos.filter(m => m.id !== momentoId));
     };
@@ -79,6 +101,25 @@ const Home = () => {
             </div>
 
             <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
+                {/* Mostrar aviso de busca ativa */}
+                {searchQuery && (
+                    <div className="search-active-banner">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="11" cy="11" r="8" strokeWidth="2" />
+                            <path d="M21 21l-4.35-4.35" strokeWidth="2" />
+                        </svg>
+                        <span>
+                            Resultados para: <strong>"{searchQuery}"</strong>
+                        </span>
+                        <button
+                            onClick={() => window.location.href = '/'}
+                            className="clear-search-btn"
+                        >
+                            Limpar busca
+                        </button>
+                    </div>
+                )}
+
                 {/* Filters */}
                 <div className="filters">
                     <div className="filterSection">
@@ -188,11 +229,19 @@ const Home = () => {
                 {!loading && momentos.length === 0 && (
                     <div className="empty">
                         <div className="emptyIcon">😢</div>
-                        <h3 className="emptyTitle">Nenhum momento encontrado</h3>
+                        <h3 className="emptyTitle">
+                            {searchQuery
+                                ? `Nenhum resultado para "${searchQuery}"`
+                                : 'Nenhum momento encontrado'
+                            }
+                        </h3>
                         <p className="emptyText">
-                            {selectedTag === 'Todos'
-                                ? 'Seja o primeiro a capturar um momento!'
-                                : 'Tente selecionar outra categoria'}
+                            {searchQuery
+                                ? 'Tente buscar com outros termos'
+                                : selectedTag === 'Todos'
+                                    ? 'Seja o primeiro a capturar um momento!'
+                                    : 'Tente selecionar outra categoria'
+                            }
                         </p>
                     </div>
                 )}
