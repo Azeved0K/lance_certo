@@ -9,19 +9,28 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showVideoModal, setShowVideoModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+
+    // Estados do formulário de edição
+    const [editForm, setEditForm] = useState({
+        titulo: momento.titulo || '',
+        descricao: momento.descricao || '',
+        tags: momento.tags ? momento.tags.map(t => typeof t === 'string' ? t : t.nome).join(', ') : ''
+    });
 
     const isOwner = user && momento.usuario && user.id === momento.usuario.id;
 
     // ✅ Construir URL completa do vídeo
     const getVideoUrl = () => {
         if (!momento.video) return null;
-        
+
         // Se já for uma URL completa, retornar como está
         if (momento.video.startsWith('http')) {
             return momento.video;
         }
-        
+
         // Caso contrário, construir URL completa
         const baseUrl = 'http://localhost:8000';
         const videoPath = momento.video.startsWith('/') ? momento.video : `/${momento.video}`;
@@ -50,11 +59,11 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
         try {
             setIsDeleting(true);
             await momentosService.deletar(momento.id);
-            
+
             if (onDelete) {
                 onDelete(momento.id);
             }
-            
+
             setShowDeleteModal(false);
         } catch (error) {
             console.error('Erro ao deletar:', error);
@@ -64,11 +73,68 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
         }
     };
 
+    const handleEdit = async (e) => {
+        e.preventDefault();
+
+        if (isEditing) return;
+
+        try {
+            setIsEditing(true);
+
+            // Preparar dados
+            const updateData = {
+                titulo: editForm.titulo.trim(),
+                descricao: editForm.descricao.trim(),
+                tags: editForm.tags
+                    .split(',')
+                    .map(tag => tag.trim())
+                    .filter(tag => tag.length > 0)
+            };
+
+            // Validação básica
+            if (!updateData.titulo) {
+                alert('O título não pode estar vazio');
+                setIsEditing(false);
+                return;
+            }
+
+            // Enviar para API
+            await momentosService.atualizar(momento.id, updateData);
+
+            // Atualizar dados locais
+            momento.titulo = updateData.titulo;
+            momento.descricao = updateData.descricao;
+            momento.tags = updateData.tags.map(nome => ({ nome }));
+
+            alert('Momento atualizado com sucesso! ✅');
+            setShowEditModal(false);
+
+            // Recarregar página para ver as mudanças
+            window.location.reload();
+        } catch (error) {
+            console.error('Erro ao editar:', error);
+            alert('Erro ao editar momento: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setIsEditing(false);
+        }
+    };
+
+    const handleOpenEditModal = () => {
+        // Resetar formulário com dados atuais
+        setEditForm({
+            titulo: momento.titulo || '',
+            descricao: momento.descricao || '',
+            tags: momento.tags ? momento.tags.map(t => typeof t === 'string' ? t : t.nome).join(', ') : ''
+        });
+        setShowMenu(false);
+        setShowEditModal(true);
+    };
+
     const handleDownload = async (e) => {
         e.stopPropagation(); // Prevenir abertura do modal
-        
+
         const videoUrl = getVideoUrl();
-        
+
         if (!videoUrl) {
             alert('Vídeo não disponível para download');
             return;
@@ -78,25 +144,25 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
             // Fazer fetch do vídeo
             const response = await fetch(videoUrl);
             const blob = await response.blob();
-            
+
             // Criar URL temporária do blob
             const blobUrl = window.URL.createObjectURL(blob);
-            
+
             // Criar link temporário para download
             const link = document.createElement('a');
             link.href = blobUrl;
             link.download = `${momento.titulo.replace(/[^a-z0-9]/gi, '_')}.webm`;
             document.body.appendChild(link);
             link.click();
-            
+
             // Limpar
             document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
-            
+
             console.log('Download iniciado com sucesso!');
         } catch (error) {
             console.error('Erro ao baixar vídeo:', error);
-            
+
             // Fallback: abrir em nova aba
             window.open(videoUrl, '_blank');
         }
@@ -105,14 +171,14 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
     const handleOpenVideo = (e) => {
         // Não abrir se clicou em botões, links ou menu
         if (
-            e.target.closest('.actionBtn') || 
+            e.target.closest('.actionBtn') ||
             e.target.closest('.menuBtn') ||
             e.target.closest('.cardDropdown') ||
             e.target.closest('button')
         ) {
             return;
         }
-        
+
         const videoUrl = getVideoUrl();
         if (videoUrl) {
             setShowVideoModal(true);
@@ -123,10 +189,10 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('pt-BR', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
+        return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
         });
     };
 
@@ -149,7 +215,7 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                         </svg>
                     </div>
                     <div className="duration">{momento.duracao}</div>
-                    
+
                     {/* Tags */}
                     {momento.tags && momento.tags.length > 0 && (
                         <div className="tags">
@@ -181,7 +247,17 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
 
                             {showMenu && (
                                 <div className="cardDropdown" onClick={(e) => e.stopPropagation()}>
-                                    <button 
+                                    <button
+                                        className="cardDropdownItem"
+                                        onClick={handleOpenEditModal}
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        Editar
+                                    </button>
+                                    {/* <button 
                                         className="cardDropdownItem" 
                                         onClick={(e) => {
                                             setShowMenu(false);
@@ -192,9 +268,9 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
                                         Baixar Vídeo
-                                    </button>
-                                    <button 
-                                        className="cardDropdownItem danger" 
+                                    </button> */}
+                                    <button
+                                        className="cardDropdownItem danger"
                                         onClick={() => {
                                             setShowMenu(false);
                                             setShowDeleteModal(true);
@@ -259,9 +335,9 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                                 </svg>
                             </button>
                             {/* ✅ ÍCONE DE COMPARTILHAR RESTAURADO, mas função de download */}
-                            <button 
-                                className="actionBtn" 
-                                title="Baixar Vídeo" 
+                            <button
+                                className="actionBtn"
+                                title="Baixar Vídeo"
                                 onClick={handleDownload}
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -282,19 +358,19 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                     <div className="modalContent" onClick={(e) => e.stopPropagation()}>
                         <h3 className="modalTitle">Deletar Momento?</h3>
                         <p className="modalText">
-                            Tem certeza que deseja deletar "<strong>{momento.titulo}</strong>"? 
+                            Tem certeza que deseja deletar "<strong>{momento.titulo}</strong>"?
                             Esta ação não pode ser desfeita.
                         </p>
                         <div className="modalActions">
-                            <button 
-                                className="btn btn-outline" 
+                            <button
+                                className="btn btn-outline"
                                 onClick={() => setShowDeleteModal(false)}
                                 disabled={isDeleting}
                             >
                                 Cancelar
                             </button>
-                            <button 
-                                className="btn btn-danger" 
+                            <button
+                                className="btn btn-danger"
                                 onClick={handleDelete}
                                 disabled={isDeleting}
                             >
@@ -305,12 +381,117 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                 </div>
             )}
 
+            {/* Modal de edição */}
+            {showEditModal && (
+                <div className="modal" onClick={() => !isEditing && setShowEditModal(false)}>
+                    <div className="editModalContent" onClick={(e) => e.stopPropagation()}>
+                        <div className="editModalHeader">
+                            <h3 className="modalTitle">Editar Momento</h3>
+                            <button
+                                className="modalCloseBtn"
+                                onClick={() => setShowEditModal(false)}
+                                disabled={isEditing}
+                                title="Fechar"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" strokeLinecap="round" />
+                                    <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleEdit} className="editForm">
+                            <div className="formGroup">
+                                <label className="formLabel">
+                                    Título *
+                                </label>
+                                <input
+                                    type="text"
+                                    className="formInput"
+                                    value={editForm.titulo}
+                                    onChange={(e) => setEditForm({ ...editForm, titulo: e.target.value })}
+                                    placeholder="Ex: Gol incrível no último minuto"
+                                    required
+                                    maxLength={200}
+                                    disabled={isEditing}
+                                />
+                                <span className="formHint">
+                                    {editForm.titulo.length}/200 caracteres
+                                </span>
+                            </div>
+
+                            <div className="formGroup">
+                                <label className="formLabel">
+                                    Descrição
+                                </label>
+                                <textarea
+                                    className="formTextarea"
+                                    value={editForm.descricao}
+                                    onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })}
+                                    placeholder="Conte mais sobre este lance..."
+                                    rows={4}
+                                    maxLength={1000}
+                                    disabled={isEditing}
+                                />
+                                <span className="formHint">
+                                    {editForm.descricao.length}/1000 caracteres
+                                </span>
+                            </div>
+
+                            <div className="formGroup">
+                                <label className="formLabel">
+                                    Tags
+                                </label>
+                                <input
+                                    type="text"
+                                    className="formInput"
+                                    value={editForm.tags}
+                                    onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
+                                    placeholder="Ex: futebol, gol, brasil"
+                                    disabled={isEditing}
+                                />
+                                <span className="formHint">
+                                    Separe as tags por vírgula
+                                </span>
+                            </div>
+
+                            <div className="modalActions">
+                                <button
+                                    type="button"
+                                    className="btn btn-outline"
+                                    onClick={() => setShowEditModal(false)}
+                                    disabled={isEditing}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={isEditing}
+                                >
+                                    {isEditing ? (
+                                        <>
+                                            <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <circle cx="12" cy="12" r="10" strokeWidth="3" strokeLinecap="round" />
+                                            </svg>
+                                            Salvando...
+                                        </>
+                                    ) : (
+                                        'Salvar Alterações'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* Modal de reprodução de vídeo */}
             {showVideoModal && (
                 <div className="videoModal" onClick={() => setShowVideoModal(false)}>
                     <div className="videoModalContent" onClick={(e) => e.stopPropagation()}>
-                        <button 
-                            className="videoModalClose" 
+                        <button
+                            className="videoModalClose"
                             onClick={() => setShowVideoModal(false)}
                             title="Fechar"
                         >
@@ -319,10 +500,10 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                                 <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" strokeLinecap="round" />
                             </svg>
                         </button>
-                        
-                        <video 
-                            src={getVideoUrl()} 
-                            controls 
+
+                        <video
+                            src={getVideoUrl()}
+                            controls
                             autoPlay
                             className="videoPlayer"
                             onError={(e) => {
@@ -330,7 +511,7 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                                 alert('Erro ao carregar o vídeo');
                             }}
                         />
-                        
+
                         <div className="videoModalInfo">
                             <h3>{momento.titulo}</h3>
                             {momento.descricao && <p>{momento.descricao}</p>}

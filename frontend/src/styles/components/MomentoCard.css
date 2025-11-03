@@ -359,6 +359,158 @@
     background: var(--danger-hover);
 }
 
+/* ✅ MODAL DE EDIÇÃO */
+.editModalContent {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.editModalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.editModalHeader .modalTitle {
+    margin: 0;
+}
+
+.modalCloseBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    color: var(--gray-500);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.modalCloseBtn:hover {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}
+
+.modalCloseBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.editForm {
+    padding: 1.5rem;
+}
+
+.formGroup {
+    margin-bottom: 1.5rem;
+}
+
+.formLabel {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.formInput,
+.formTextarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-family: inherit;
+    border: 2px solid var(--gray-300);
+    border-radius: 8px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.formInput:focus,
+.formTextarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.formInput:disabled,
+.formTextarea:disabled {
+    background: var(--gray-100);
+    cursor: not-allowed;
+}
+
+.formTextarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.formHint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 0.375rem;
+}
+
+.btn-primary {
+    background: linear-gradient(to right, var(--primary-color), #4F46E5);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(to right, var(--primary-hover), #4338CA);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:disabled,
+.btn-outline:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive do modal de edição */
+@media (max-width: 640px) {
+    .editModalContent {
+        max-width: 100%;
+        border-radius: 12px 12px 0 0;
+        max-height: 95vh;
+    }
+
+    .editModalHeader {
+        padding: 1rem;
+    }
+
+    .editForm {
+        padding: 1rem;
+    }
+
+    .formGroup {
+        margin-bottom: 1.25rem;
+    }
+}
+
 /* ✅ MODAL DE VÍDEO */
 .videoModal {
     position: fixed;
