@@ -24,6 +24,8 @@ class MomentoListSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     total_likes = serializers.ReadOnlyField()
     is_liked = serializers.SerializerMethodField()
+    video = serializers.SerializerMethodField()
+    thumbnail = serializers.SerializerMethodField()
     
     class Meta:
         model = Momento
@@ -31,6 +33,7 @@ class MomentoListSerializer(serializers.ModelSerializer):
             'id',
             'titulo',
             'descricao',
+            'video',
             'thumbnail',
             'duracao',
             'views',
@@ -49,6 +52,20 @@ class MomentoListSerializer(serializers.ModelSerializer):
             return Like.objects.filter(usuario=request.user, momento=obj).exists()
         return False
 
+    def get_video(self, obj):
+        """Retorna URL completa do vídeo"""
+        request = self.context.get('request')
+        if obj.video:
+            return request.build_absolute_uri(obj.video.url) if request else obj.video.url
+        return None
+    
+    def get_thumbnail(self, obj):
+        """Retorna URL completa do thumbnail"""
+        request = self.context.get('request')
+        if obj.thumbnail:
+            return request.build_absolute_uri(obj.thumbnail.url) if request else obj.thumbnail.url
+        return None
+
 class MomentoDetailSerializer(serializers.ModelSerializer):
     """Serializer para detalhes do momento (mais completo)"""
     usuario = UsuarioSerializer(read_only=True)
@@ -56,7 +73,9 @@ class MomentoDetailSerializer(serializers.ModelSerializer):
     total_likes = serializers.ReadOnlyField()
     is_liked = serializers.SerializerMethodField()
     comentarios = ComentarioSerializer(many=True, read_only=True)
-    
+    video = serializers.SerializerMethodField()
+    thumbnail = serializers.SerializerMethodField()
+
     class Meta:
         model = Momento
         fields = [
@@ -82,6 +101,20 @@ class MomentoDetailSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return Like.objects.filter(usuario=request.user, momento=obj).exists()
         return False
+    
+    def get_video(self, obj):
+        """Retorna URL completa do vídeo"""
+        request = self.context.get('request')
+        if obj.video:
+            return request.build_absolute_uri(obj.video.url) if request else obj.video.url
+        return None
+    
+    def get_thumbnail(self, obj):
+        """Retorna URL completa do thumbnail"""
+        request = self.context.get('request')
+        if obj.thumbnail:
+            return request.build_absolute_uri(obj.thumbnail.url) if request else obj.thumbnail.url
+        return None
 
 class MomentoCreateSerializer(serializers.ModelSerializer):
     """Serializer para criação de momento"""
