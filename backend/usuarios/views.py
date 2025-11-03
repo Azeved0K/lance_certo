@@ -1,3 +1,4 @@
+# backend/usuarios/views.py
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -6,7 +7,6 @@ from django.contrib.auth import authenticate, login, logout
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
-from django.shortcuts import render #já existia
 
 from .serializers import (
     UsuarioSerializer,
@@ -52,7 +52,10 @@ class LoginView(APIView):
             user = authenticate(request, username=username, password=password)
             
             if user is not None:
+                # CRÍTICO: Fazer login para criar a sessão
                 login(request, user)
+                
+                # Retornar dados do usuário
                 return Response(
                     {
                         'message': 'Login realizado com sucesso',

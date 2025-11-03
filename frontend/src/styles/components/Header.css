@@ -35,6 +35,10 @@
     border-radius: 8px;
 }
 
+.logoIcon svg {
+    flex-shrink: 0;
+}
+
 .logoHighlight {
     color: var(--primary-color);
 }
@@ -67,6 +71,7 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--gray-400);
+    pointer-events: none;
 }
 
 /* Navigation */
@@ -88,6 +93,11 @@
     font-size: 0.875rem;
     text-decoration: none;
     transition: all 0.2s;
+    border: none;
+}
+
+.btnCapture svg {
+    flex-shrink: 0;
 }
 
 .btnCapture:hover {
@@ -112,6 +122,10 @@
 .notificationBtn:hover {
     background: var(--gray-100);
     color: var(--primary-color);
+}
+
+.notificationBtn svg {
+    flex-shrink: 0;
 }
 
 .badge {
@@ -249,7 +263,7 @@
 
 .captureBtn {
     padding: 0.5rem 1rem;
-    background: linear-gradient(to right, #10B981, #059669); /* verde */
+    background: linear-gradient(to right, #10B981, #059669);
     color: white;
     font-weight: 600;
     text-decoration: none;
@@ -259,7 +273,7 @@
 }
 
 .captureBtn:hover {
-    background: linear-gradient(to right, #059669, #047857); /* verde mais escuro no hover */
+    background: linear-gradient(to right, #059669, #047857);
     box-shadow: 0 4px 12px rgba(4, 120, 87, 0.3);
     transform: translateY(-2px);
 }
@@ -280,5 +294,19 @@
 
     .logoText {
         font-size: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .headerContent {
+        gap: 0.5rem;
+    }
+
+    .nav {
+        gap: 0.5rem;
+    }
+
+    .logoText {
+        display: none;
     }
 }

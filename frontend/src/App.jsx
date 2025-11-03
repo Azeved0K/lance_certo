@@ -1,51 +1,95 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import Capture from './pages/Capture';
 
-function App() {
-  // Futuramente: verificar autenticação real
-  const isAuthenticated = true; // Simulando usuário autenticado
+// Componente interno que usa o contexto
+function AppRoutes() {
+  const { user } = useAuth();
 
   return (
-    <Router>
-      <Routes>
-        {/* Rotas Públicas */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+    <Routes>
+      {/* Rotas Publicas */}
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/" /> : <Login />}
+      />
+      <Route
+        path="/register"
+        element={user ? <Navigate to="/" /> : <Register />}
+      />
 
-        {/* Rotas Protegidas */}
-        <Route
-          path="/"
-          element={isAuthenticated ? <Home /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/capture"
-          element={isAuthenticated ? <Capture /> : <Navigate to="/login" />}
-        />
+      {/* Rotas Protegidas */}
+      <Route
+        path="/"
+        element={user ? <Home /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/capture"
+        element={user ? <Capture /> : <Navigate to="/login" />}
+      />
 
-        {/* Rota 404 */}
-        <Route
-          path="*"
-          element={
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-6xl font-bold text-gray-800 mb-4">404</h1>
-                <p className="text-xl text-gray-600 mb-6">Página não encontrada</p>
-                <a
-                  href="/"
-                  className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-                >
-                  Voltar ao Início
-                </a>
-              </div>
+      {/* Rota 404 */}
+      <Route
+        path="*"
+        element={
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            background: 'var(--gray-50)',
+            textAlign: 'center',
+            padding: '2rem'
+          }}>
+            <div>
+              <h1 style={{
+                fontSize: '4rem',
+                fontWeight: 'bold',
+                color: 'var(--gray-800)',
+                marginBottom: '1rem'
+              }}>
+                404
+              </h1>
+              <p style={{
+                fontSize: '1.25rem',
+                color: 'var(--gray-600)',
+                marginBottom: '1.5rem'
+              }}>
+                Pagina nao encontrada
+              </p>
+              <a
+                href="/"
+                style={{
+                  display: 'inline-block',
+                  padding: '0.75rem 1.5rem',
+                  background: 'var(--primary-color)',
+                  color: 'white',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  textDecoration: 'none'
+                }}
+              >
+                Voltar ao Inicio
+              </a>
             </div>
-          }
-        />
-      </Routes>
-    </Router>
+          </div>
+        }
+      />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
   );
 }
 

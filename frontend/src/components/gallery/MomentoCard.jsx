@@ -2,7 +2,7 @@ import { useState } from 'react';
 import '../../styles/components/MomentoCard.css';
 
 const MomentoCard = ({ momento, onLike }) => {
-    const [liked, setLiked] = useState(false);
+    const [liked, setLiked] = useState(momento.is_liked || false);
 
     const handleLike = () => {
         setLiked(!liked);
@@ -37,7 +37,9 @@ const MomentoCard = ({ momento, onLike }) => {
                 {momento.tags && momento.tags.length > 0 && (
                     <div className="tags">
                         {momento.tags.slice(0, 2).map((tag, index) => (
-                            <span key={index} className="tag">{tag}</span>
+                            <span key={index} className="tag">
+                                {typeof tag === 'string' ? tag : tag.nome}
+                            </span>
                         ))}
                     </div>
                 )}
@@ -51,29 +53,29 @@ const MomentoCard = ({ momento, onLike }) => {
                 {/* User */}
                 <div className="user">
                     <img
-                        src={momento.usuario?.avatar || `https://ui-avatars.com/api/?name=${momento.usuario?.nome}&background=3B82F6&color=fff`}
-                        alt={momento.usuario?.nome}
+                        src={momento.usuario?.avatar || `https://ui-avatars.com/api/?name=${momento.usuario?.username || momento.usuario?.nome}&background=3B82F6&color=fff`}
+                        alt={momento.usuario?.username || momento.usuario?.nome}
                         className="avatar"
                     />
-                    <span className="username">{momento.usuario?.nome}</span>
-                    <span className="date">{formatDate(momento.data)}</span>
+                    <span className="username">{momento.usuario?.username || momento.usuario?.nome}</span>
+                    <span className="date">{formatDate(momento.data || momento.created_at)}</span>
                 </div>
 
                 {/* Stats */}
                 <div className="stats">
                     <div className="statsLeft">
                         <div className="stat">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="2" />
-                                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <circle cx="12" cy="12" r="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                             <span>{formatViews(momento.views)}</span>
                         </div>
                         <div className="stat">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'}>
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" strokeWidth="2" />
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                            <span>{momento.likes + (liked ? 1 : 0)}</span>
+                            <span>{(momento.likes || momento.total_likes || 0) + (liked && !momento.is_liked ? 1 : 0)}</span>
                         </div>
                     </div>
 

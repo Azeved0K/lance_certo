@@ -39,15 +39,17 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
 CORS_ALLOW_CREDENTIALS = True  # Importante para sessões/cookies
 
-# Configurações de CSRF para desenvolvimento cross-origin
+# CSRF
 CSRF_TRUSTED_ORIGINS = ['http://localhost:5173']
 CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_HTTPONLY = False  # Frontend precisa ler para enviar em requests
+CSRF_COOKIE_HTTPONLY = False  # Frontend precisa ler
+CSRF_COOKIE_SECURE = False  # True apenas em HTTPS (produção)
 
 # Sessões
 SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_HTTPONLY = True  # Segurança
-SESSION_COOKIE_SECURE = False  # True apenas em HTTPS (produção)
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False  # True em produção
+SESSION_COOKIE_AGE = 86400  # 24 horas
 
 ROOT_URLCONF = 'config.urls'
 

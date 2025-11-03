@@ -167,6 +167,7 @@
 
 .stat svg {
     color: var(--gray-500);
+    flex-shrink: 0;
 }
 
 /* Actions */
@@ -192,6 +193,10 @@
 .actionBtn:hover {
     background: var(--gray-200);
     transform: scale(1.1);
+}
+
+.actionBtn svg {
+    flex-shrink: 0;
 }
 
 .actionBtn.liked {

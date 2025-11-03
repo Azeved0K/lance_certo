@@ -1,126 +1,74 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/layout/Header';
 import MomentoCard from '../components/gallery/MomentoCard';
+import { momentosService } from '../services/api';
 import '../styles/pages/Home.css';
 
-// Dados mocados (futuramente virão da API)
-const mockMomentos = [
-    {
-        id: 1,
-        titulo: 'Gol Incrível do Neymar',
-        descricao: 'Golaço de falta no ângulo!',
-        thumbnail: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&h=300&fit=crop',
-        duracao: '00:45',
-        views: 1234,
-        likes: 89,
-        data: '2024-10-20',
-        usuario: { nome: 'Carlos Santos', avatar: null },
-        tags: ['Futebol', 'Gol']
-    },
-    {
-        id: 2,
-        titulo: 'Defesa Espetacular',
-        descricao: 'Goleiro faz defesa impossível!',
-        thumbnail: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop',
-        duracao: '00:30',
-        views: 2341,
-        likes: 156,
-        data: '2024-10-21',
-        usuario: { nome: 'Maria Oliveira', avatar: null },
-        tags: ['Futebol', 'Defesa']
-    },
-    {
-        id: 3,
-        titulo: 'Enterrada Sensacional',
-        descricao: 'Jogador voa para a cesta!',
-        thumbnail: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop',
-        duracao: '00:20',
-        views: 3456,
-        likes: 234,
-        data: '2024-10-22',
-        usuario: { nome: 'Pedro Costa', avatar: null },
-        tags: ['Basquete', 'Enterrada']
-    },
-    {
-        id: 4,
-        titulo: 'Ace no Vôlei',
-        descricao: 'Saque impossível de receber!',
-        thumbnail: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=400&h=300&fit=crop',
-        duracao: '00:15',
-        views: 987,
-        likes: 67,
-        data: '2024-10-23',
-        usuario: { nome: 'Ana Paula', avatar: null },
-        tags: ['Vôlei', 'Ace']
-    },
-    {
-        id: 5,
-        titulo: 'Drible Desconcertante',
-        descricao: 'Jogador deixa três na cara!',
-        thumbnail: 'https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?w=400&h=300&fit=crop',
-        duracao: '00:35',
-        views: 4567,
-        likes: 345,
-        data: '2024-10-24',
-        usuario: { nome: 'Lucas Ferreira', avatar: null },
-        tags: ['Futebol', 'Drible']
-    },
-    {
-        id: 6,
-        titulo: 'Hat-trick Histórico',
-        descricao: 'Três gols em 10 minutos!',
-        thumbnail: 'https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=400&h=300&fit=crop',
-        duracao: '02:30',
-        views: 8901,
-        likes: 678,
-        data: '2024-10-24',
-        usuario: { nome: 'Roberto Lima', avatar: null },
-        tags: ['Futebol', 'Gol']
-    }
-];
+const mockTags = ['Todos', 'Futebol', 'Basquete', 'Volei', 'Gol', 'Defesa', 'Drible'];
 
-const mockTags = ['Todos', 'Futebol', 'Basquete', 'Vôlei', 'Gol', 'Defesa', 'Drible'];
-
-const Home = ({ user, onLogout }) => {
+const Home = () => {
+    const { user, logout } = useAuth();
     const [selectedTag, setSelectedTag] = useState('Todos');
     const [sortBy, setSortBy] = useState('recent');
-    const [momentos, setMomentos] = useState(mockMomentos);
+    const [momentos, setMomentos] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        filterAndSort();
+        fetchMomentos();
     }, [selectedTag, sortBy]);
 
-    const filterAndSort = () => {
-        let filtered = selectedTag === 'Todos'
-            ? mockMomentos
-            : mockMomentos.filter(m => m.tags.includes(selectedTag));
+    const fetchMomentos = async () => {
+        try {
+            setLoading(true);
+            setError('');
 
-        filtered = [...filtered].sort((a, b) => {
-            if (sortBy === 'popular') return b.views - a.views;
-            if (sortBy === 'trending') return b.likes - a.likes;
-            return new Date(b.data) - new Date(a.data);
-        });
+            const params = {
+                sort: sortBy
+            };
 
-        setMomentos(filtered);
+            if (selectedTag !== 'Todos') {
+                params.tag = selectedTag.toLowerCase();
+            }
+
+            const response = await momentosService.listar(params);
+            const data = response.data || [];
+            setMomentos(Array.isArray(data) ? data : []);
+            console.log('Momentos carregados:', data);
+        } catch (err) {
+            console.error('Erro ao carregar momentos:', err);
+            setError('Erro ao carregar momentos');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleLike = (momentoId, liked) => {
-        console.log(`Momento ${momentoId} ${liked ? 'curtido' : 'descurtido'}`);
+    const handleLike = async (momentoId, liked) => {
+        try {
+            if (liked) {
+                await momentosService.like(momentoId);
+            } else {
+                await momentosService.unlike(momentoId);
+            }
+            // Atualizar lista
+            fetchMomentos();
+        } catch (error) {
+            console.error('Erro ao curtir/descurtir:', error);
+        }
     };
 
     return (
         <>
-            <Header user={user} onLogout={onLogout} />
+            <Header user={user} onLogout={logout} />
 
             {/* Hero */}
             <div className="hero">
                 <div className="container">
-                    <h1 className="heroTitle">
-                        Lance Certo ⚽🏀
-                    </h1>
+                    <h1 className="heroTitle">Lance Certo</h1>
                     <p className="heroSubtitle">
-                        Reviva os melhores momentos do esporte capturados por fãs como você!
+                        O replay garantido do seu melhor momento.
                     </p>
                 </div>
             </div>
@@ -188,18 +136,58 @@ const Home = ({ user, onLogout }) => {
                     </div>
                 </div>
 
+                {/* Loading */}
+                {loading && (
+                    <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+                        <div className="loading-spinner" style={{ margin: '0 auto' }}></div>
+                    </div>
+                )}
+
+                {/* Error */}
+                {error && (
+                    <div style={{
+                        padding: '1rem',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '2px solid var(--danger-color)',
+                        borderRadius: '8px',
+                        color: 'var(--danger-color)',
+                        textAlign: 'center',
+                        marginBottom: '2rem'
+                    }}>
+                        {error}
+                    </div>
+                )}
+
                 {/* Grid */}
-                {momentos.length > 0 ? (
+                {!loading && momentos.length > 0 && (
                     <div className="grid grid-cols-3">
                         {momentos.map((momento) => (
-                            <MomentoCard key={momento.id} momento={momento} onLike={handleLike} />
+                            <MomentoCard
+                                key={momento.id}
+                                momento={{
+                                    ...momento,
+                                    thumbnail: momento.thumbnail || 'https://via.placeholder.com/400x300?text=Sem+Thumbnail',
+                                    duracao: formatDuration(momento.duracao),
+                                    data: momento.created_at,
+                                    likes: momento.total_likes,
+                                    usuario: momento.usuario
+                                }}
+                                onLike={handleLike}
+                            />
                         ))}
                     </div>
-                ) : (
+                )}
+
+                {/* Empty */}
+                {!loading && momentos.length === 0 && (
                     <div className="empty">
                         <div className="emptyIcon">😢</div>
                         <h3 className="emptyTitle">Nenhum momento encontrado</h3>
-                        <p className="emptyText">Tente selecionar outra categoria</p>
+                        <p className="emptyText">
+                            {selectedTag === 'Todos'
+                                ? 'Seja o primeiro a capturar um momento!'
+                                : 'Tente selecionar outra categoria'}
+                        </p>
                     </div>
                 )}
 
@@ -207,10 +195,10 @@ const Home = ({ user, onLogout }) => {
                 <div className="cta">
                     <h2 className="ctaTitle">Capture Seu Momento! 🎥</h2>
                     <p className="ctaText">
-                        Não perca aquele lance incrível. Comece a gravar agora!
+                        Nao perca aquele lance incrivel. Comece a gravar agora!
                     </p>
                     <Link to="/capture" className="ctaButton">
-                        Começar a Capturar
+                        Comecar a Capturar
                     </Link>
                 </div>
             </div>
@@ -218,11 +206,18 @@ const Home = ({ user, onLogout }) => {
             {/* Footer */}
             <footer className="footer">
                 <div className="container" style={{ textAlign: 'center' }}>
-                    <p>© 2025 Lance Certo - Desenvolvido com ❤️ para os fãs de esporte.</p>
+                    <p>© 2025 Lance Certo - Desenvolvido com ❤️ para os fas de esporte.</p>
                 </div>
             </footer>
         </>
     );
 };
+
+// Funcao auxiliar para formatar duracao
+function formatDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
 
 export default Home;
