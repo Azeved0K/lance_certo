@@ -59,6 +59,11 @@ const Home = () => {
         }
     };
 
+    // ✅ NOVO: Callback para remover momento da lista após exclusão
+    const handleDelete = (momentoId) => {
+        setMomentos(prevMomentos => prevMomentos.filter(m => m.id !== momentoId));
+    };
+
     return (
         <>
             <Header user={user} onLogout={logout} />
@@ -173,6 +178,7 @@ const Home = () => {
                                     usuario: momento.usuario
                                 }}
                                 onLike={handleLike}
+                                onDelete={handleDelete}
                             />
                         ))}
                     </div>
@@ -195,10 +201,10 @@ const Home = () => {
                 <div className="cta">
                     <h2 className="ctaTitle">Capture Seu Momento! 🎥</h2>
                     <p className="ctaText">
-                        Nao perca aquele lance incrivel. Comece a gravar agora!
+                        Não perca aquele lance incrível. Comece a gravar agora!
                     </p>
                     <Link to="/capture" className="ctaButton">
-                        Comecar a Capturar
+                        Começar a Capturar
                     </Link>
                 </div>
             </div>
@@ -206,14 +212,14 @@ const Home = () => {
             {/* Footer */}
             <footer className="footer">
                 <div className="container" style={{ textAlign: 'center' }}>
-                    <p>© 2025 Lance Certo - Desenvolvido com ❤️ para os fas de esporte.</p>
+                    <p>© 2025 Lance Certo - Desenvolvido com ❤️ para os fãs de esporte.</p>
                 </div>
             </footer>
         </>
     );
 };
 
-// Funcao auxiliar para formatar duracao
+// Função auxiliar para formatar duração
 function formatDuration(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;

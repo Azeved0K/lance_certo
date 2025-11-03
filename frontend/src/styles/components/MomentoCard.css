@@ -218,3 +218,252 @@
         font-size: 1rem;
     }
 }
+
+/* Menu de opcoes do card */
+.cardMenu {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+}
+
+.menuBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.menuBtn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+}
+
+.cardDropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+    overflow: hidden;
+    z-index: 100;
+}
+
+.cardDropdownItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cardDropdownItem:hover {
+    background: var(--gray-50);
+}
+
+.cardDropdownItem.danger {
+    color: var(--danger-color);
+}
+
+.cardDropdownItem.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.cardDropdownItem svg {
+    flex-shrink: 0;
+}
+
+/* Modal de exclusão */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+}
+
+.modalContent {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 100%;
+}
+
+.modalTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 1rem;
+}
+
+.modalText {
+    color: var(--gray-600);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.modalActions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-outline {
+    background: white;
+    border: 2px solid var(--gray-300);
+    color: var(--gray-700);
+}
+
+.btn-outline:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: var(--danger-hover);
+}
+
+/* ✅ MODAL DE VÍDEO */
+.videoModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 2rem;
+}
+
+.videoModalContent {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    background: var(--gray-900);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.videoModalClose {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.videoModalClose:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+}
+
+.videoPlayer {
+    width: 100%;
+    max-height: 80vh;
+    display: block;
+    background: black;
+}
+
+.videoModalInfo {
+    padding: 1.5rem;
+    background: var(--gray-800);
+    color: white;
+}
+
+.videoModalInfo h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.videoModalInfo p {
+    color: var(--gray-300);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.videoModalStats {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
+    color: var(--gray-400);
+}
+
+.videoModalStats span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Responsive do modal de vídeo */
+@media (max-width: 768px) {
+    .videoModal {
+        padding: 0;
+    }
+
+    .videoModalContent {
+        max-width: 100%;
+        border-radius: 0;
+        height: 100vh;
+    }
+
+    .videoPlayer {
+        max-height: 60vh;
+    }
+
+    .videoModalInfo h3 {
+        font-size: 1.25rem;
+    }
+
+    .videoModalStats {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}

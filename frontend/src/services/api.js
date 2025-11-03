@@ -48,6 +48,8 @@ export const momentosService = {
         headers: { 'Content-Type': 'multipart/form-data' },
     }),
     buscar: (id) => api.get(`/momentos/${id}/`),
+    atualizar: (id, data) => api.patch(`/momentos/${id}/`, data),
+    deletar: (id) => api.delete(`/momentos/${id}/`),
     like: (id) => api.post(`/momentos/${id}/like/`),
     unlike: (id) => api.delete(`/momentos/${id}/like/`),
 };
