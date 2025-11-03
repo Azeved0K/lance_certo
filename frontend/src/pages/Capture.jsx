@@ -10,10 +10,15 @@ const Capture = ({ user, onLogout }) => {
     const mediaRecorderRef = useRef(null);
     const chunksRef = useRef([]);
     const streamRef = useRef(null);
+    const recordingStartTimeRef = useRef(null);
 
     const [isRecording, setIsRecording] = useState(false);
-    const [recordedVideo, setRecordedVideo] = useState(null);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [clips, setClips] = useState([]);
+    const [showClipsManager, setShowClipsManager] = useState(false);
+    const [selectedClips, setSelectedClips] = useState([]);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [currentClipData, setCurrentClipData] = useState(null);
     const [error, setError] = useState('');
     const [uploadData, setUploadData] = useState({
         titulo: '',
@@ -21,10 +26,23 @@ const Capture = ({ user, onLogout }) => {
         tags: ''
     });
 
-    const BUFFER_DURATION = 60000; // 60 segundos em ms
+    const BUFFER_DURATION = 60000; // 60 segundos
     const CHUNK_DURATION = 1000; // 1 segundo por chunk
 
-    // Cleanup ao desmontar componente
+    // Timer da gravação
+    useEffect(() => {
+        let interval;
+        if (isRecording) {
+            interval = setInterval(() => {
+                setRecordingTime(prev => prev + 1);
+            }, 1000);
+        } else {
+            setRecordingTime(0);
+        }
+        return () => clearInterval(interval);
+    }, [isRecording]);
+
+    // Cleanup ao desmontar
     useEffect(() => {
         return () => {
             stopStream();
@@ -36,19 +54,18 @@ const Capture = ({ user, onLogout }) => {
         try {
             setError('');
 
-            // Captura de câmera com melhor qualidade
+            // Solicitar acesso à câmera
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     width: { ideal: 1920 },
-                    height: { ideal: 1080 },
-                    facingMode: 'user' // Câmera frontal por padrão
+                    height: { ideal: 1080 }
                 },
                 audio: true
             });
 
             streamRef.current = stream;
 
-            // Mostrar preview no video element
+            // Mostrar preview
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 videoRef.current.play();
@@ -57,10 +74,9 @@ const Capture = ({ user, onLogout }) => {
             // Configurar MediaRecorder
             const options = {
                 mimeType: 'video/webm;codecs=vp9,opus',
-                videoBitsPerSecond: 2500000 // 2.5 Mbps
+                videoBitsPerSecond: 2500000
             };
 
-            // Fallback para navegadores que não suportam VP9
             if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                 options.mimeType = 'video/webm';
             }
@@ -68,10 +84,10 @@ const Capture = ({ user, onLogout }) => {
             const mediaRecorder = new MediaRecorder(stream, options);
             mediaRecorderRef.current = mediaRecorder;
 
-            // Array para armazenar chunks
             chunksRef.current = [];
+            recordingStartTimeRef.current = Date.now();
 
-            // Evento: dados disponíveis (a cada 1 segundo)
+            // Evento: dados disponíveis
             mediaRecorder.ondataavailable = (event) => {
                 if (event.data && event.data.size > 0) {
                     chunksRef.current.push({
@@ -87,23 +103,17 @@ const Capture = ({ user, onLogout }) => {
                 }
             };
 
-            // Evento: parou de gravar
-            mediaRecorder.onstop = () => {
-                console.log('Gravação finalizada');
-            };
-
-            // Evento: erro
             mediaRecorder.onerror = (event) => {
                 console.error('Erro no MediaRecorder:', event.error);
                 setError('Erro ao gravar vídeo');
             };
 
-            // Iniciar gravação (com chunks a cada 1 segundo)
+            // Iniciar gravação
             mediaRecorder.start(CHUNK_DURATION);
             setIsRecording(true);
 
         } catch (err) {
-            console.error('Erro ao capturar:', err);
+            console.error('Erro ao capturar câmera:', err);
             if (err.name === 'NotAllowedError') {
                 setError('Permissão negada. Autorize o acesso à câmera.');
             } else if (err.name === 'NotFoundError') {
@@ -114,52 +124,62 @@ const Capture = ({ user, onLogout }) => {
         }
     };
 
-    // Parar gravação e gerar vídeo
+    // Salvar clipe dos últimos 60 segundos
+    const handleSaveClip = () => {
+        if (chunksRef.current.length === 0) {
+            alert('Nenhum dado gravado ainda. Aguarde alguns segundos.');
+            return;
+        }
+
+        // Criar blob do clipe
+        const videoChunks = chunksRef.current.map(chunk => chunk.data);
+        const mimeType = mediaRecorderRef.current?.mimeType || 'video/webm';
+        const blob = new Blob(videoChunks, { type: mimeType });
+        const videoUrl = URL.createObjectURL(blob);
+
+        // Calcular duração
+        const duration = Math.round(chunksRef.current.length * (CHUNK_DURATION / 1000));
+
+        const newClip = {
+            id: Date.now(),
+            blob,
+            url: videoUrl,
+            duration: `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`,
+            durationSeconds: duration,
+            size: (blob.size / (1024 * 1024)).toFixed(2),
+            savedAt: new Date().toLocaleTimeString('pt-BR')
+        };
+
+        setClips(prev => [...prev, newClip]);
+        
+        // Feedback visual
+        const btn = document.querySelector('.btn-save-clip');
+        if (btn) {
+            btn.classList.add('clip-saved-animation');
+            setTimeout(() => btn.classList.remove('clip-saved-animation'), 500);
+        }
+
+        console.log(`📹 Clipe ${clips.length + 1} salvo!`, newClip);
+    };
+
+    // Parar gravação e abrir gerenciador de clipes
     const handleStopRecording = () => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
             mediaRecorderRef.current.stop();
         }
 
         setIsRecording(false);
+        stopStream();
 
-        // Gerar vídeo dos últimos 60 segundos
-        setTimeout(() => {
-            generateVideo();
-        }, 500);
-    };
-
-    // Gerar vídeo a partir dos chunks
-    const generateVideo = () => {
-        if (chunksRef.current.length === 0) {
-            setError('Nenhum dado gravado');
+        if (clips.length === 0) {
+            alert('Nenhum clipe foi salvo durante a gravação.');
             return;
         }
 
-        // Pegar apenas os chunks de vídeo (sem o timestamp)
-        const videoChunks = chunksRef.current.map(chunk => chunk.data);
-
-        // Criar blob do vídeo
-        const mimeType = mediaRecorderRef.current?.mimeType || 'video/webm';
-        const blob = new Blob(videoChunks, { type: mimeType });
-
-        // Criar URL para preview
-        const videoUrl = URL.createObjectURL(blob);
-
-        // Calcular duração aproximada
-        const duration = Math.round(chunksRef.current.length * (CHUNK_DURATION / 1000));
-
-        setRecordedVideo({
-            blob,
-            url: videoUrl,
-            duration: `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`,
-            size: (blob.size / (1024 * 1024)).toFixed(2) // Tamanho em MB
-        });
-
-        // Parar stream
-        stopStream();
+        setShowClipsManager(true);
     };
 
-    // Parar stream de captura
+    // Parar stream
     const stopStream = () => {
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
@@ -171,74 +191,93 @@ const Capture = ({ user, onLogout }) => {
         }
     };
 
-    // Descartar vídeo
-    const handleDiscard = () => {
-        if (window.confirm('Descartar este momento?')) {
-            if (recordedVideo?.url) {
-                URL.revokeObjectURL(recordedVideo.url);
-            }
-            setRecordedVideo(null);
-            chunksRef.current = [];
+    // Selecionar/desselecionar clipe
+    const toggleClipSelection = (clipId) => {
+        setSelectedClips(prev =>
+            prev.includes(clipId)
+                ? prev.filter(id => id !== clipId)
+                : [...prev, clipId]
+        );
+    };
+
+    // Deletar clipe
+    const handleDeleteClip = (clipId) => {
+        setClips(prev => prev.filter(clip => clip.id !== clipId));
+        setSelectedClips(prev => prev.filter(id => id !== clipId));
+    };
+
+    // Publicar clipes selecionados
+    const handlePublishSelected = () => {
+        if (selectedClips.length === 0) {
+            alert('Selecione pelo menos um clipe para publicar');
+            return;
+        }
+
+        // Pegar primeiro clipe selecionado para publicar
+        const clipToPublish = clips.find(c => c.id === selectedClips[0]);
+        
+        if (clipToPublish) {
+            setCurrentClipData(clipToPublish);
+            setShowUploadModal(true);
         }
     };
 
-    // Abrir modal de upload
-    const handleOpenUpload = () => {
-        setShowUploadModal(true);
-    };
-
-    const handleCloseModal = () => {
-        setShowUploadModal(false);
-        setUploadData({ titulo: '', descricao: '', tags: '' });
-    };
-
-    // Upload do vídeo
+    // Upload do clipe
     const handleUpload = async (e) => {
         e.preventDefault();
 
-        if (!recordedVideo?.blob) {
-            alert('Nenhum vídeo para enviar');
+        if (!currentClipData?.blob) {
+            alert('Nenhum clipe para enviar');
             return;
         }
 
         try {
-            // Criar FormData para enviar arquivo
             const formData = new FormData();
 
-            // Adicionar vídeo
             const videoFile = new File(
-                [recordedVideo.blob],
+                [currentClipData.blob],
                 `momento-${Date.now()}.webm`,
-                { type: recordedVideo.blob.type }
+                { type: currentClipData.blob.type }
             );
             formData.append('video', videoFile);
-
-            // Adicionar outros dados
             formData.append('titulo', uploadData.titulo);
             formData.append('descricao', uploadData.descricao);
-            formData.append('duracao', Math.round(chunksRef.current.length * (CHUNK_DURATION / 1000)));
+            formData.append('duracao', currentClipData.durationSeconds);
 
-            // Tags (separar por vírgula)
             if (uploadData.tags) {
                 const tagsArray = uploadData.tags.split(',').map(t => t.trim());
                 formData.append('tags', JSON.stringify(tagsArray));
             }
 
-            // Enviar para API
             await momentosService.criar(formData);
 
-            alert('Momento publicado com sucesso!');
+            alert('✅ Momento publicado com sucesso!');
 
             // Limpar
-            if (recordedVideo?.url) {
-                URL.revokeObjectURL(recordedVideo.url);
+            if (currentClipData?.url) {
+                URL.revokeObjectURL(currentClipData.url);
             }
+
+            // Resetar tudo
+            setClips([]);
+            setSelectedClips([]);
+            setShowUploadModal(false);
+            setShowClipsManager(false);
+            setCurrentClipData(null);
+            setUploadData({ titulo: '', descricao: '', tags: '' });
 
             navigate('/');
         } catch (error) {
             console.error('Erro ao enviar:', error);
-            alert('Erro ao publicar momento: ' + (error.response?.data?.message || error.message));
+            alert('❌ Erro ao publicar momento: ' + (error.response?.data?.message || error.message));
         }
+    };
+
+    // Formatar tempo de gravação
+    const formatRecordingTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -249,9 +288,9 @@ const Capture = ({ user, onLogout }) => {
                 <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
                     {/* Header */}
                     <div className="capture-header">
-                        <h1 className="capture-title">🎥 Capturar Lance</h1>
+                        <h1 className="capture-title">📹 Capturar Momentos</h1>
                         <p className="capture-subtitle">
-                            Grave os últimos 60 segundos de ação ao vivo da sua câmera
+                            Grave continuamente e salve clipes dos últimos 60 segundos a qualquer momento
                         </p>
                     </div>
 
@@ -263,110 +302,170 @@ const Capture = ({ user, onLogout }) => {
                     )}
 
                     {/* Área de captura */}
-                    <div className="capture-card">
-                        {!recordedVideo ? (
-                            <>
-                                <div className="preview-area">
-                                    {isRecording && (
-                                        <div className="recording-badge">
-                                            <div className="recording-dot"></div>
-                                            <span>GRAVANDO</span>
-                                        </div>
-                                    )}
+                    {!showClipsManager && (
+                        <div className="capture-card">
+                            <div className="preview-area">
+                                {isRecording && (
+                                    <div className="recording-badge">
+                                        <div className="recording-dot"></div>
+                                        <span>GRAVANDO {formatRecordingTime(recordingTime)}</span>
+                                    </div>
+                                )}
 
-                                    <video
-                                        ref={videoRef}
-                                        autoPlay
-                                        muted
-                                        playsInline
-                                        className="video-preview"
-                                        style={{ display: isRecording ? 'block' : 'none' }}
-                                    />
+                                <video
+                                    ref={videoRef}
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    className="video-preview"
+                                    style={{ display: isRecording ? 'block' : 'none' }}
+                                />
 
-                                    {!isRecording && (
-                                        <div className="placeholder-content">
-                                            <svg className="camera-icon" width="80" height="80" viewBox="0 0 24 24" fill="none">
-                                                <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-                                                <circle cx="9" cy="12" r="2" stroke="currentColor" strokeWidth="2" />
-                                                <path d="M15 9l4-2v10l-4-2" stroke="currentColor" strokeWidth="2" />
-                                            </svg>
-                                            <p className="placeholder-text">Pronto para capturar</p>
-                                            <p className="placeholder-small">
-                                                📹 Modo: Captura de Câmera
-                                            </p>
-                                        </div>
-                                    )}
+                                {!isRecording && (
+                                    <div className="placeholder-content">
+                                        <svg className="camera-icon" width="80" height="80" viewBox="0 0 24 24" fill="none">
+                                            <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+                                            <circle cx="9" cy="12" r="2" stroke="currentColor" strokeWidth="2" />
+                                            <path d="M15 9l4-2v10l-4-2" stroke="currentColor" strokeWidth="2" />
+                                        </svg>
+                                        <p className="placeholder-text">Pronto para começar</p>
+                                        <p className="placeholder-small">📹 Modo: Captura de Câmera</p>
+                                    </div>
+                                )}
 
-                                    <div className="buffer-badge">Buffer: 60s</div>
-                                </div>
+                                {isRecording && clips.length > 0 && (
+                                    <div className="clips-counter">
+                                        📼 {clips.length} clipe(s) salvos
+                                    </div>
+                                )}
+                            </div>
 
-                                <div className="controls">
-                                    <div className="controls-main">
-                                        {!isRecording ? (
+                            <div className="controls">
+                                {!isRecording ? (
+                                    <>
+                                        <div className="controls-main">
                                             <button onClick={startCapture} className="btn-record">
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                                                     <circle cx="12" cy="12" r="10" fill="currentColor" />
                                                 </svg>
                                                 Iniciar Gravação
                                             </button>
-                                        ) : (
-                                            <button onClick={handleStopRecording} className="btn-stop">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                                    <rect x="6" y="6" width="12" height="12" fill="currentColor" />
-                                                </svg>
-                                                Parar e Salvar
+                                        </div>
+
+                                        <div className="info-box">
+                                            <h3 className="info-title">💡 Como funciona:</h3>
+                                            <ul className="info-list">
+                                                <li>Clique em "Iniciar Gravação" para começar</li>
+                                                <li>Durante a gravação, clique em "Salvar Clipe" quando quiser capturar os últimos 60 segundos</li>
+                                                <li>Você pode salvar vários clipes durante uma mesma gravação</li>
+                                                <li>Ao finalizar, escolha quais clipes deseja publicar</li>
+                                            </ul>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="recording-controls">
+                                        <button onClick={handleSaveClip} className="btn-save-clip">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <polyline points="17 21 17 13 7 13 7 21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <polyline points="7 3 7 8 15 8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            Salvar Clipe (últimos 60s)
+                                        </button>
+
+                                        <button onClick={handleStopRecording} className="btn-stop">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                                <rect x="6" y="6" width="12" height="12" fill="currentColor" />
+                                            </svg>
+                                            Parar e Finalizar
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Gerenciador de Clipes */}
+                    {showClipsManager && (
+                        <div className="clips-manager">
+                            <div className="clips-manager-header">
+                                <h2 className="clips-title">
+                                    📼 Gerenciar Clipes ({clips.length})
+                                </h2>
+                                <p className="clips-subtitle">
+                                    Selecione os clipes que deseja publicar
+                                </p>
+                            </div>
+
+                            <div className="clips-grid">
+                                {clips.map((clip) => (
+                                    <div
+                                        key={clip.id}
+                                        className={`clip-card ${selectedClips.includes(clip.id) ? 'selected' : ''}`}
+                                    >
+                                        <div className="clip-preview">
+                                            <video
+                                                src={clip.url}
+                                                controls
+                                                className="clip-video"
+                                            />
+                                            <div className="clip-duration">{clip.duration}</div>
+                                        </div>
+
+                                        <div className="clip-info">
+                                            <p className="clip-saved-at">Salvo às {clip.savedAt}</p>
+                                            <p className="clip-size">{clip.size} MB</p>
+                                        </div>
+
+                                        <div className="clip-actions">
+                                            <button
+                                                onClick={() => toggleClipSelection(clip.id)}
+                                                className={`btn-select ${selectedClips.includes(clip.id) ? 'selected' : ''}`}
+                                            >
+                                                {selectedClips.includes(clip.id) ? '✓ Selecionado' : 'Selecionar'}
                                             </button>
-                                        )}
+                                            <button
+                                                onClick={() => handleDeleteClip(clip.id)}
+                                                className="btn-delete-clip"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </div>
                                     </div>
+                                ))}
+                            </div>
 
-                                    <div className="info-box">
-                                        <h3 className="info-title">💡 Como funciona:</h3>
-                                        <ul className="info-list">
-                                            <li>Mantemos um buffer dos últimos 60 segundos</li>
-                                            <li>Clique em "Parar e Salvar" no momento exato</li>
-                                            <li>O vídeo salvo conterá os 60s anteriores ao clique</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="preview-area">
-                                    <video
-                                        src={recordedVideo.url}
-                                        controls
-                                        className="video-preview"
-                                        style={{ display: 'block' }}
-                                    />
-                                    <div className="video-info-badge">
-                                        {recordedVideo.duration} • {recordedVideo.size} MB
-                                    </div>
-                                </div>
-
-                                <div className="controls">
-                                    <h3 className="success-title">✅ Lance capturado!</h3>
-                                    <div className="preview-actions">
-                                        <button onClick={handleOpenUpload} className="btn-publish">
-                                            Publicar Lance
-                                        </button>
-                                        <button onClick={handleDiscard} className="btn-discard">
-                                            Descartar
-                                        </button>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                            <div className="clips-manager-footer">
+                                <button
+                                    onClick={() => {
+                                        setShowClipsManager(false);
+                                        setClips([]);
+                                        setSelectedClips([]);
+                                    }}
+                                    className="btn btn-outline"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handlePublishSelected}
+                                    className="btn btn-primary"
+                                    disabled={selectedClips.length === 0}
+                                >
+                                    Publicar {selectedClips.length > 0 ? `(${selectedClips.length})` : ''}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Modal Upload */}
             {showUploadModal && (
-                <div className="modal" onClick={handleCloseModal}>
+                <div className="modal" onClick={() => setShowUploadModal(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 className="modal-title">Publicar Lance</h2>
-                            <button onClick={handleCloseModal} className="modal-close">×</button>
+                            <h2 className="modal-title">Publicar Clipe</h2>
+                            <button onClick={() => setShowUploadModal(false)} className="modal-close">×</button>
                         </div>
 
                         <form onSubmit={handleUpload} className="modal-form">
@@ -405,7 +504,7 @@ const Capture = ({ user, onLogout }) => {
                             </div>
 
                             <div className="modal-actions">
-                                <button type="button" onClick={handleCloseModal} className="btn btn-outline">
+                                <button type="button" onClick={() => setShowUploadModal(false)} className="btn btn-outline">
                                     Cancelar
                                 </button>
                                 <button type="submit" className="btn btn-primary">

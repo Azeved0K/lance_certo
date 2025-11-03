@@ -20,35 +20,6 @@
     color: var(--gray-400);
 }
 
-/* Seletor de modo */
-.mode-selector {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 2rem;
-}
-
-.mode-btn {
-    padding: 1rem 2rem;
-    background: var(--gray-800);
-    color: white;
-    border: 2px solid transparent;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.mode-btn:hover {
-    background: var(--gray-700);
-}
-
-.mode-btn.active {
-    border-color: var(--primary-color);
-    background: rgba(59, 130, 246, 0.2);
-}
-
 /* Error box */
 .error-box {
     padding: 1rem;
@@ -105,15 +76,8 @@
 }
 
 @keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.6;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
 
 .recording-dot {
@@ -121,6 +85,18 @@
     height: 12px;
     background: white;
     border-radius: 50%;
+}
+
+.clips-counter {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    z-index: 10;
 }
 
 .placeholder-content {
@@ -141,30 +117,6 @@
 .placeholder-small {
     font-size: 0.875rem;
     color: var(--gray-500);
-}
-
-.buffer-badge {
-    position: absolute;
-    bottom: 1rem;
-    right: 1rem;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.875rem;
-    font-family: monospace;
-}
-
-.video-info-badge {
-    position: absolute;
-    bottom: 1rem;
-    left: 1rem;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 600;
 }
 
 /* Controls */
@@ -201,6 +153,43 @@
     box-shadow: 0 8px 20px rgba(239, 68, 68, 0.5);
 }
 
+/* Recording Controls */
+.recording-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-save-clip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-save-clip:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-save-clip.clip-saved-animation {
+    animation: clipSaved 0.5s ease;
+}
+
+@keyframes clipSaved {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); background: var(--secondary-color); }
+}
+
 .btn-stop {
     display: inline-flex;
     align-items: center;
@@ -210,7 +199,7 @@
     color: white;
     border: none;
     border-radius: 24px;
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.3s;
@@ -221,6 +210,7 @@
     transform: translateY(-2px);
 }
 
+/* Info Box */
 .info-box {
     padding: 1.5rem;
     background: rgba(59, 130, 246, 0.1);
@@ -256,56 +246,148 @@
     color: var(--primary-color);
 }
 
-/* Preview Actions */
-.success-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    text-align: center;
+/* Clips Manager */
+.clips-manager {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    color: var(--gray-900);
 }
 
-.preview-actions {
+.clips-manager-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.clips-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.clips-subtitle {
+    color: var(--gray-600);
+    font-size: 1rem;
+}
+
+/* Clips Grid */
+.clips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.clip-card {
+    background: var(--gray-50);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 3px solid transparent;
+    transition: all 0.3s;
+}
+
+.clip-card:hover {
+    border-color: var(--gray-300);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.clip-card.selected {
+    border-color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.05);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.clip-preview {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: black;
+}
+
+.clip-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.clip-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.clip-info {
+    padding: 1rem;
+    background: white;
+}
+
+.clip-saved-at {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: 0.25rem;
+}
+
+.clip-size {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.clip-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1rem 1rem;
+}
+
+.btn-select {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    background: var(--gray-200);
+    color: var(--gray-700);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-select:hover {
+    background: var(--gray-300);
+}
+
+.btn-select.selected {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-delete-clip {
+    padding: 0.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-delete-clip:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* Clips Manager Footer */
+.clips-manager-footer {
     display: flex;
     gap: 1rem;
-}
-
-.btn-publish {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.875rem 1.5rem;
-    background: linear-gradient(to right, var(--primary-color), #4F46E5);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-publish:hover {
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    transform: translateY(-2px);
-}
-
-.btn-discard {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.875rem 1.5rem;
-    background: var(--danger-color);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-discard:hover {
-    background: var(--danger-hover);
+    justify-content: flex-end;
+    padding-top: 2rem;
+    border-top: 1px solid var(--gray-200);
 }
 
 /* Modal */
@@ -383,11 +465,15 @@
         font-size: 2rem;
     }
 
-    .preview-actions {
+    .recording-controls {
         flex-direction: column;
     }
 
-    .mode-selector {
+    .clips-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .clips-manager-footer {
         flex-direction: column;
     }
 }
