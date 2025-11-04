@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { momentosService } from '../../services/api';
 import '../../styles/components/MomentoCard.css';
@@ -12,6 +12,8 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [viewIncremented, setViewIncremented] = useState(false); // ✅ NOVO: Controle de view única
+    const videoRef = useRef(null); // ✅ NOVO: Referência ao vídeo
 
     const [editForm, setEditForm] = useState({
         titulo: momento.titulo || '',
@@ -21,7 +23,7 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
 
     const isOwner = user && momento.usuario && user.id === momento.usuario.id;
 
-    // ✅ URL do vídeo simplificada (backend retorna URL completa)
+    // URL do vídeo
     const getVideoUrl = () => momento.video || null;
 
     const handleLike = async () => {
@@ -118,15 +120,40 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
         }
     };
 
-    const handleOpenVideo = (e) => {
+    // ✅ NOVO: Incrementar view ao abrir modal
+    const handleOpenVideo = async (e) => {
         if (e.target.closest('.actionBtn') || e.target.closest('.menuBtn') || e.target.closest('.cardDropdown') || e.target.closest('button')) {
             return;
         }
         const videoUrl = getVideoUrl();
         if (videoUrl) {
             setShowVideoModal(true);
+
+            // Incrementar view apenas uma vez por sessão
+            if (!viewIncremented) {
+                try {
+                    await momentosService.incrementarView(momento.id);
+                    setViewIncremented(true);
+                    console.log('✅ View incrementada para o momento:', momento.id);
+                } catch (error) {
+                    console.error('Erro ao incrementar view:', error);
+                }
+            }
         } else {
             alert('Vídeo não disponível');
+        }
+    };
+
+    // ✅ NOVO: Incrementar view ao reproduzir vídeo
+    const handleVideoPlay = async () => {
+        if (!viewIncremented) {
+            try {
+                await momentosService.incrementarView(momento.id);
+                setViewIncremented(true);
+                console.log('✅ View incrementada ao reproduzir vídeo:', momento.id);
+            } catch (error) {
+                console.error('Erro ao incrementar view:', error);
+            }
         }
     };
 
@@ -232,6 +259,7 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                 </div>
             </div>
 
+            {/* Modal de Exclusão */}
             {showDeleteModal && (
                 <div className="modal" onClick={() => !isDeleting && setShowDeleteModal(false)}>
                     <div className="modalContent" onClick={(e) => e.stopPropagation()}>
@@ -245,6 +273,7 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                 </div>
             )}
 
+            {/* Modal de Edição */}
             {showEditModal && (
                 <div className="modal" onClick={() => !isEditing && setShowEditModal(false)}>
                     <div className="editModalContent" onClick={(e) => e.stopPropagation()}>
@@ -284,6 +313,7 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                 </div>
             )}
 
+            {/* Modal de Vídeo */}
             {showVideoModal && (
                 <div className="videoModal" onClick={() => setShowVideoModal(false)}>
                     <div className="videoModalContent" onClick={(e) => e.stopPropagation()}>
@@ -293,7 +323,15 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                                 <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" strokeLinecap="round" />
                             </svg>
                         </button>
-                        <video src={getVideoUrl()} controls autoPlay className="videoPlayer" onError={(e) => { console.error('Erro ao carregar vídeo:', e); alert('Erro ao carregar o vídeo'); }} />
+                        <video
+                            ref={videoRef}
+                            src={getVideoUrl()}
+                            controls
+                            autoPlay
+                            className="videoPlayer"
+                            onPlay={handleVideoPlay}
+                            onError={(e) => { console.error('Erro ao carregar vídeo:', e); alert('Erro ao carregar o vídeo'); }}
+                        />
                         <div className="videoModalInfo">
                             <h3>{momento.titulo}</h3>
                             {momento.descricao && <p>{momento.descricao}</p>}

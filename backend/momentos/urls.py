@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     MomentoListCreateView,
     MomentoDetailView,
+    MomentoIncrementViewView,
     MomentoLikeView,
     ComentarioListCreateView,
     ComentarioDeleteView,
@@ -14,6 +15,7 @@ urlpatterns = [
     # Momentos
     path('', MomentoListCreateView.as_view(), name='momento-list-create'),
     path('<int:pk>/', MomentoDetailView.as_view(), name='momento-detail'),
+    path('<int:pk>/view/', MomentoIncrementViewView.as_view(), name='momento-increment-view'),
     path('<int:pk>/like/', MomentoLikeView.as_view(), name='momento-like'),
     
     # Comentários

@@ -40,6 +40,15 @@ class MomentoListCreateView(generics.ListCreateAPIView):
         if usuario:
             queryset = queryset.filter(usuario__username=usuario)
         
+        # Busca por texto
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(titulo__icontains=search) |
+                Q(descricao__icontains=search) |
+                Q(tags__nome__icontains=search)
+            ).distinct()
+        
         # Ordenação personalizada
         sort_by = self.request.query_params.get('sort', 'recent')
         if sort_by == 'popular':
@@ -47,7 +56,7 @@ class MomentoListCreateView(generics.ListCreateAPIView):
         elif sort_by == 'trending':
             queryset = queryset.annotate(
                 total_likes=models.Count('likes')
-            ).order_by('-total_likes')
+            ).order_by('-total_likes', '-views')
         else:  # recent
             queryset = queryset.order_by('-created_at')
         
@@ -77,11 +86,6 @@ class MomentoDetailView(APIView):
     
     def get(self, request, pk):
         momento = self.get_object(pk)
-        
-        # Incrementar views (apenas se não for o dono)
-        if not request.user.is_authenticated or request.user != momento.usuario:
-            momento.incrementar_views()
-        
         serializer = MomentoDetailSerializer(momento, context={'request': request})
         return Response(serializer.data)
     
@@ -115,6 +119,30 @@ class MomentoDetailView(APIView):
         return Response(
             {'message': 'Momento deletado com sucesso'},
             status=status.HTTP_204_NO_CONTENT
+        )
+
+class MomentoIncrementViewView(APIView):
+    """
+    POST /api/momentos/{id}/view/ - Incrementa view do momento
+    """
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    
+    def post(self, request, pk):
+        momento = get_object_or_404(Momento, pk=pk)
+        
+        # Não incrementar se for o dono
+        if request.user.is_authenticated and request.user == momento.usuario:
+            return Response(
+                {'message': 'Donos não incrementam views próprias', 'views': momento.views},
+                status=status.HTTP_200_OK
+            )
+        
+        # Incrementar view
+        momento.incrementar_views()
+        
+        return Response(
+            {'message': 'View incrementada', 'views': momento.views},
+            status=status.HTTP_200_OK
         )
 
 class MomentoLikeView(APIView):

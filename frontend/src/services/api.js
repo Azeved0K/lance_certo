@@ -52,6 +52,7 @@ export const momentosService = {
     deletar: (id) => api.delete(`/momentos/${id}/`),
     like: (id) => api.post(`/momentos/${id}/like/`),
     unlike: (id) => api.delete(`/momentos/${id}/like/`),
+    incrementarView: (id) => api.post(`/momentos/${id}/view/`), // ✅ NOVO
 };
 
 export default api;
