@@ -153,17 +153,7 @@
 
 .sortInfo svg {
     color: var(--primary-color);
-    animation: rotate 2s linear infinite;
-}
-
-@keyframes rotate {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+    /* ✅ ANIMAÇÃO REMOVIDA - Ícone estático */
 }
 
 .sortLabel {
@@ -391,10 +381,6 @@
     .clear-search-btn {
         margin-left: 0;
         width: 100%;
-    }
-
-    .sortInfo svg {
-        animation: none;
     }
 }
 

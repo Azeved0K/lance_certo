@@ -45,7 +45,7 @@ const Home = () => {
             setError('');
 
             const params = {
-                sort: sortBy
+                sort: sortBy // ✅ CRÍTICO: Enviar corretamente para o backend
             };
 
             // Filtrar por tag
@@ -58,6 +58,8 @@ const Home = () => {
                 params.search = searchQuery;
             }
 
+            console.log('🔍 Parâmetros enviados para API:', params);
+
             const response = await momentosService.listar(params);
             const data = response.data || [];
 
@@ -66,6 +68,15 @@ const Home = () => {
 
             setMomentos(filteredData);
             console.log('✅ Momentos carregados:', filteredData.length, 'itens');
+            console.log('📊 Ordenação aplicada:', sortBy);
+
+            // ✅ Log COMPLETO de TODOS os momentos para debug
+            if (filteredData.length > 0) {
+                console.log('📋 TODOS os momentos na ordem recebida:');
+                filteredData.forEach((m, index) => {
+                    console.log(`  ${index + 1}. "${m.titulo}": ${m.views} views, ${m.total_likes || m.likes || 0} likes, ${m.created_at}`);
+                });
+            }
         } catch (err) {
             console.error('❌ Erro ao carregar momentos:', err);
             setError('Erro ao carregar momentos');
@@ -128,6 +139,32 @@ const Home = () => {
         }
     };
 
+    // ✅ Obter ícone da ordenação atual
+    const getSortIcon = () => {
+        switch (sortBy) {
+            case 'trending':
+                return (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" fill="currentColor" />
+                    </svg>
+                );
+            case 'popular':
+                return (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" fill="currentColor" />
+                    </svg>
+                );
+            case 'recent':
+            default:
+                return (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                        <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                );
+        }
+    };
+
     return (
         <>
             <Header user={user} onLogout={logout} />
@@ -180,13 +217,10 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {/* Barra de Ordenação */}
+                    {/* Barra de Ordenação - MELHORADA */}
                     <div className="sortBar">
                         <div className="sortInfo">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                                <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" />
-                            </svg>
+                            {getSortIcon()}
                             <span className="sortLabel">
                                 {getSortLabel()}
                             </span>
@@ -197,6 +231,7 @@ const Home = () => {
                             <button
                                 onClick={() => handleSortChange('recent')}
                                 className={`sortBtn ${sortBy === 'recent' ? 'sortBtnActive' : ''}`}
+                                title="Momentos mais recentes"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
@@ -207,6 +242,7 @@ const Home = () => {
                             <button
                                 onClick={() => handleSortChange('trending')}
                                 className={`sortBtn ${sortBy === 'trending' ? 'sortBtnActive' : ''}`}
+                                title="Momentos com mais curtidas"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" />
@@ -216,6 +252,7 @@ const Home = () => {
                             <button
                                 onClick={() => handleSortChange('popular')}
                                 className={`sortBtn ${sortBy === 'popular' ? 'sortBtnActive' : ''}`}
+                                title="Momentos com mais visualizações"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" />

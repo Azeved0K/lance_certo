@@ -29,7 +29,7 @@ class MomentoListCreateView(generics.ListCreateAPIView):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['titulo', 'descricao', 'tags__nome']
     ordering_fields = ['created_at', 'views']
-    ordering = ['-created_at']
+    # ✅ REMOVIDO: ordering = ['-created_at']  # Estava sobrescrevendo nossa ordenação customizada
     
     def get_queryset(self):
         # ✅ Busca base com prefetch para otimização
@@ -79,11 +79,17 @@ class MomentoListCreateView(generics.ListCreateAPIView):
             queryset = queryset.order_by('-created_at')
             logger.info(f"📊 Ordenando por data (recent)")
         
-        # ✅ Log de debug: mostrar primeiros 5 resultados
-        momentos_list = list(queryset[:5])
-        for m in momentos_list:
-            likes = getattr(m, 'likes_count', m.likes.count()) if sort_by == 'trending' else m.likes.count()
-            logger.info(f"  - {m.titulo}: {m.views} views, {likes} likes, {m.created_at}")
+        # ✅ Log de debug: mostrar TODOS os resultados após ordenação
+        momentos_list = list(queryset)
+        logger.info(f"📊 TOTAL de momentos encontrados: {len(momentos_list)}")
+        logger.info(f"📋 TODOS os momentos na ordem do backend ({sort_by}):")
+        for idx, m in enumerate(momentos_list, 1):
+            # Pegar likes_count do campo anotado OU contar diretamente
+            if sort_by == 'trending':
+                likes = getattr(m, 'likes_count', m.likes.count())
+            else:
+                likes = m.likes.count()
+            logger.info(f"  {idx}. '{m.titulo}': {m.views} views, {likes} likes, criado em {m.created_at}")
         
         return queryset
     
