@@ -10,15 +10,31 @@ const mockTags = ['Todos', 'Futebol', 'Basquete', 'Volei', 'Gol', 'Defesa', 'Dri
 
 const Home = () => {
     const { user, logout } = useAuth();
-    const [searchParams] = useSearchParams();
-    const searchQuery = searchParams.get('search') || '';
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    const [selectedTag, setSelectedTag] = useState('Todos');
-    const [sortBy, setSortBy] = useState('recent');
+    // ✅ Ler parâmetros da URL
+    const searchQuery = searchParams.get('search') || '';
+    const tagParam = searchParams.get('tag') || 'Todos';
+    const sortParam = searchParams.get('sort') || 'recent';
+
+    const [selectedTag, setSelectedTag] = useState(tagParam);
+    const [sortBy, setSortBy] = useState(sortParam);
     const [momentos, setMomentos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // ✅ Sincronizar estado com URL
+    useEffect(() => {
+        const newSearchParams = new URLSearchParams();
+
+        if (searchQuery) newSearchParams.set('search', searchQuery);
+        if (selectedTag !== 'Todos') newSearchParams.set('tag', selectedTag);
+        if (sortBy !== 'recent') newSearchParams.set('sort', sortBy);
+
+        setSearchParams(newSearchParams, { replace: true });
+    }, [selectedTag, sortBy, searchQuery, setSearchParams]);
+
+    // ✅ Buscar momentos quando filtros mudarem
     useEffect(() => {
         fetchMomentos();
     }, [selectedTag, sortBy, searchQuery]);
@@ -32,11 +48,12 @@ const Home = () => {
                 sort: sortBy
             };
 
+            // Filtrar por tag
             if (selectedTag !== 'Todos') {
                 params.tag = selectedTag.toLowerCase();
             }
 
-            // Adicionar parâmetro de busca se existir
+            // Busca por texto
             if (searchQuery) {
                 params.search = searchQuery;
             }
@@ -44,24 +61,13 @@ const Home = () => {
             const response = await momentosService.listar(params);
             const data = response.data || [];
 
-            // Se houver busca, filtrar localmente também (fallback)
-            let filteredData = Array.isArray(data) ? data : [];
-
-            if (searchQuery) {
-                const query = searchQuery.toLowerCase();
-                filteredData = filteredData.filter(momento =>
-                    momento.titulo?.toLowerCase().includes(query) ||
-                    momento.descricao?.toLowerCase().includes(query) ||
-                    momento.tags?.some(tag =>
-                        (typeof tag === 'string' ? tag : tag.nome)?.toLowerCase().includes(query)
-                    )
-                );
-            }
+            // Garantir que data é array
+            const filteredData = Array.isArray(data) ? data : [];
 
             setMomentos(filteredData);
-            console.log('Momentos carregados:', filteredData);
+            console.log('✅ Momentos carregados:', filteredData.length, 'itens');
         } catch (err) {
-            console.error('Erro ao carregar momentos:', err);
+            console.error('❌ Erro ao carregar momentos:', err);
             setError('Erro ao carregar momentos');
         } finally {
             setLoading(false);
@@ -86,6 +92,42 @@ const Home = () => {
         setMomentos(prevMomentos => prevMomentos.filter(m => m.id !== momentoId));
     };
 
+    // ✅ Handlers com logs para debug
+    const handleTagChange = (tag) => {
+        console.log('🏷️ Tag selecionada:', tag);
+        setSelectedTag(tag);
+    };
+
+    const handleSortChange = (sort) => {
+        console.log('📊 Ordenação alterada para:', sort);
+        setSortBy(sort);
+    };
+
+    const clearSearch = () => {
+        window.location.href = '/';
+    };
+
+    // ✅ Função para formatar duração
+    const formatDuration = (seconds) => {
+        if (!seconds) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    // ✅ Obter nome da ordenação atual
+    const getSortLabel = () => {
+        switch (sortBy) {
+            case 'trending':
+                return 'Em Alta';
+            case 'popular':
+                return 'Mais Vistos';
+            case 'recent':
+            default:
+                return 'Recentes';
+        }
+    };
+
     return (
         <>
             <Header user={user} onLogout={logout} />
@@ -101,7 +143,7 @@ const Home = () => {
             </div>
 
             <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-                {/* Mostrar aviso de busca ativa */}
+                {/* Banner de Busca Ativa */}
                 {searchQuery && (
                     <div className="search-active-banner">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -112,7 +154,7 @@ const Home = () => {
                             Resultados para: <strong>"{searchQuery}"</strong>
                         </span>
                         <button
-                            onClick={() => window.location.href = '/'}
+                            onClick={clearSearch}
                             className="clear-search-btn"
                         >
                             Limpar busca
@@ -120,15 +162,16 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Filters */}
+                {/* Filtros */}
                 <div className="filters">
+                    {/* Tags */}
                     <div className="filterSection">
                         <h2 className="filterTitle">Categorias</h2>
                         <div className="tags">
                             {mockTags.map((tag) => (
                                 <button
                                     key={tag}
-                                    onClick={() => setSelectedTag(tag)}
+                                    onClick={() => handleTagChange(tag)}
                                     className={`tag ${selectedTag === tag ? 'tagActive' : ''}`}
                                 >
                                     {tag}
@@ -137,6 +180,7 @@ const Home = () => {
                         </div>
                     </div>
 
+                    {/* Barra de Ordenação */}
                     <div className="sortBar">
                         <div className="sortInfo">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -144,14 +188,14 @@ const Home = () => {
                                 <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" />
                             </svg>
                             <span className="sortLabel">
-                                {sortBy === 'trending' ? 'Em Alta' : sortBy === 'popular' ? 'Mais Vistos' : 'Recentes'}
+                                {getSortLabel()}
                             </span>
                             <span className="count">({momentos.length} momentos)</span>
                         </div>
 
                         <div className="sortButtons">
                             <button
-                                onClick={() => setSortBy('recent')}
+                                onClick={() => handleSortChange('recent')}
                                 className={`sortBtn ${sortBy === 'recent' ? 'sortBtnActive' : ''}`}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -161,7 +205,7 @@ const Home = () => {
                                 Recentes
                             </button>
                             <button
-                                onClick={() => setSortBy('trending')}
+                                onClick={() => handleSortChange('trending')}
                                 className={`sortBtn ${sortBy === 'trending' ? 'sortBtnActive' : ''}`}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -170,7 +214,7 @@ const Home = () => {
                                 Em Alta
                             </button>
                             <button
-                                onClick={() => setSortBy('popular')}
+                                onClick={() => handleSortChange('popular')}
                                 className={`sortBtn ${sortBy === 'popular' ? 'sortBtnActive' : ''}`}
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -186,6 +230,9 @@ const Home = () => {
                 {loading && (
                     <div style={{ textAlign: 'center', padding: '4rem 0' }}>
                         <div className="loading-spinner" style={{ margin: '0 auto' }}></div>
+                        <p style={{ marginTop: '1rem', color: 'var(--gray-600)' }}>
+                            Carregando momentos...
+                        </p>
                     </div>
                 )}
 
@@ -204,7 +251,7 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Grid */}
+                {/* Grid de Momentos */}
                 {!loading && momentos.length > 0 && (
                     <div className="grid grid-cols-3">
                         {momentos.map((momento) => (
@@ -225,7 +272,7 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Empty */}
+                {/* Empty State */}
                 {!loading && momentos.length === 0 && (
                     <div className="empty">
                         <div className="emptyIcon">😢</div>
@@ -243,19 +290,30 @@ const Home = () => {
                                     : 'Tente selecionar outra categoria'
                             }
                         </p>
+                        {searchQuery && (
+                            <button
+                                onClick={clearSearch}
+                                className="btn btn-primary"
+                                style={{ marginTop: '1rem' }}
+                            >
+                                Limpar busca
+                            </button>
+                        )}
                     </div>
                 )}
 
                 {/* CTA */}
-                <div className="cta">
-                    <h2 className="ctaTitle">Capture Seu Momento! 🎥</h2>
-                    <p className="ctaText">
-                        Não perca aquele lance incrível. Comece a gravar agora!
-                    </p>
-                    <Link to="/capture" className="ctaButton">
-                        Começar a Capturar
-                    </Link>
-                </div>
+                {!searchQuery && (
+                    <div className="cta">
+                        <h2 className="ctaTitle">Capture Seu Momento! 🎥</h2>
+                        <p className="ctaText">
+                            Não perca aquele lance incrível. Comece a gravar agora!
+                        </p>
+                        <Link to="/capture" className="ctaButton">
+                            Começar a Capturar
+                        </Link>
+                    </div>
+                )}
             </div>
 
             {/* Footer */}
@@ -267,12 +325,5 @@ const Home = () => {
         </>
     );
 };
-
-// Função auxiliar para formatar duração
-function formatDuration(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
 
 export default Home;

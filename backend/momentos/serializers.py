@@ -22,7 +22,7 @@ class MomentoListSerializer(serializers.ModelSerializer):
     """Serializer para listagem de momentos (mais leve)"""
     usuario = UsuarioSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
-    total_likes = serializers.ReadOnlyField()
+    total_likes = serializers.SerializerMethodField()  # ✅ Mudança aqui
     is_liked = serializers.SerializerMethodField()
     video = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
@@ -44,6 +44,14 @@ class MomentoListSerializer(serializers.ModelSerializer):
             'created_at'
         ]
         read_only_fields = ['id', 'views', 'created_at']
+    
+    def get_total_likes(self, obj):
+        """✅ NOVO: Pega do campo anotado OU da property"""
+        # Se a view anotou 'likes_count', usa esse valor
+        if hasattr(obj, 'likes_count'):
+            return obj.likes_count
+        # Caso contrário, conta diretamente
+        return obj.likes.count()
     
     def get_is_liked(self, obj):
         """Verifica se o usuário atual curtiu este momento"""
@@ -70,7 +78,7 @@ class MomentoDetailSerializer(serializers.ModelSerializer):
     """Serializer para detalhes do momento (mais completo)"""
     usuario = UsuarioSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
-    total_likes = serializers.ReadOnlyField()
+    total_likes = serializers.SerializerMethodField()  # ✅ Mudança aqui
     is_liked = serializers.SerializerMethodField()
     comentarios = ComentarioSerializer(many=True, read_only=True)
     video = serializers.SerializerMethodField()
@@ -95,6 +103,12 @@ class MomentoDetailSerializer(serializers.ModelSerializer):
             'updated_at'
         ]
         read_only_fields = ['id', 'usuario', 'views', 'created_at', 'updated_at']
+    
+    def get_total_likes(self, obj):
+        """✅ NOVO: Pega do campo anotado OU da property"""
+        if hasattr(obj, 'likes_count'):
+            return obj.likes_count
+        return obj.likes.count()
     
     def get_is_liked(self, obj):
         request = self.context.get('request')

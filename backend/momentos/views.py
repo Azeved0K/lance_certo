@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Count
 from django.db import models
+import logging
 
 from .models import Momento, Tag, Like, Comentario
 from .serializers import (
@@ -16,6 +17,9 @@ from .serializers import (
     ComentarioSerializer
 )
 
+# ✅ Logger para debug
+logger = logging.getLogger(__name__)
+
 class MomentoListCreateView(generics.ListCreateAPIView):
     """
     GET /api/momentos/ - Lista todos os momentos
@@ -24,21 +28,24 @@ class MomentoListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['titulo', 'descricao', 'tags__nome']
-    ordering_fields = ['created_at', 'views', 'likes__id']
+    ordering_fields = ['created_at', 'views']
     ordering = ['-created_at']
     
     def get_queryset(self):
-        queryset = Momento.objects.select_related('usuario').prefetch_related('tags', 'likes')
+        # ✅ Busca base com prefetch para otimização
+        queryset = Momento.objects.select_related('usuario').prefetch_related('tags')
         
         # Filtrar por tag
         tag = self.request.query_params.get('tag', None)
         if tag:
             queryset = queryset.filter(tags__slug=tag)
+            logger.info(f"🏷️ Filtrando por tag: {tag}")
         
         # Filtrar por usuário
         usuario = self.request.query_params.get('usuario', None)
         if usuario:
             queryset = queryset.filter(usuario__username=usuario)
+            logger.info(f"👤 Filtrando por usuário: {usuario}")
         
         # Busca por texto
         search = self.request.query_params.get('search', None)
@@ -48,17 +55,35 @@ class MomentoListCreateView(generics.ListCreateAPIView):
                 Q(descricao__icontains=search) |
                 Q(tags__nome__icontains=search)
             ).distinct()
+            logger.info(f"🔍 Busca por texto: {search}")
         
-        # Ordenação personalizada
+        # ✅ ORDENAÇÃO CORRIGIDA
         sort_by = self.request.query_params.get('sort', 'recent')
+        logger.info(f"📊 Ordenação solicitada: {sort_by}")
+        
         if sort_by == 'popular':
-            queryset = queryset.order_by('-views')
+            # Ordenar por visualizações (mais vistas primeiro)
+            queryset = queryset.order_by('-views', '-created_at')
+            logger.info(f"📊 Ordenando por views (popular)")
+            
         elif sort_by == 'trending':
+            # Ordenar por curtidas (em alta)
+            # ✅ CRÍTICO: Anotar com alias diferente da property do modelo
             queryset = queryset.annotate(
-                total_likes=models.Count('likes')
-            ).order_by('-total_likes', '-views')
-        else:  # recent
+                likes_count=Count('likes', distinct=True)
+            ).order_by('-likes_count', '-views', '-created_at')
+            logger.info(f"📊 Ordenando por curtidas (trending)")
+            
+        else:  # recent (padrão)
+            # Ordenar por data de criação (mais recentes primeiro)
             queryset = queryset.order_by('-created_at')
+            logger.info(f"📊 Ordenando por data (recent)")
+        
+        # ✅ Log de debug: mostrar primeiros 5 resultados
+        momentos_list = list(queryset[:5])
+        for m in momentos_list:
+            likes = getattr(m, 'likes_count', m.likes.count()) if sort_by == 'trending' else m.likes.count()
+            logger.info(f"  - {m.titulo}: {m.views} views, {likes} likes, {m.created_at}")
         
         return queryset
     
@@ -139,6 +164,7 @@ class MomentoIncrementViewView(APIView):
         
         # Incrementar view
         momento.incrementar_views()
+        logger.info(f"👁️ View incrementada para '{momento.titulo}': {momento.views} views")
         
         return Response(
             {'message': 'View incrementada', 'views': momento.views},
@@ -162,6 +188,7 @@ class MomentoLikeView(APIView):
         )
         
         if created:
+            logger.info(f"❤️ {request.user.username} curtiu '{momento.titulo}': {momento.total_likes} likes")
             return Response(
                 {
                     'message': 'Momento curtido',
@@ -181,6 +208,7 @@ class MomentoLikeView(APIView):
         try:
             like = Like.objects.get(usuario=request.user, momento=momento)
             like.delete()
+            logger.info(f"💔 {request.user.username} descurtiu '{momento.titulo}': {momento.total_likes} likes")
             return Response(
                 {
                     'message': 'Like removido',
