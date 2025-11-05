@@ -2,6 +2,7 @@ from rest_framework import status, generics, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.pagination import PageNumberPagination  # ✅ NOVO
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Count
 from django.db import models
@@ -20,16 +21,22 @@ from .serializers import (
 # ✅ Logger para debug
 logger = logging.getLogger(__name__)
 
+# ✅ NOVO: Classe de Paginação Customizada
+class MomentoPagination(PageNumberPagination):
+    page_size = 9  # ✅ 9 momentos por página (3x3 grid)
+    page_size_query_param = 'page_size'  # Permite customizar: ?page_size=12
+    max_page_size = 24  # Máximo de 24 por página
+
 class MomentoListCreateView(generics.ListCreateAPIView):
     """
-    GET /api/momentos/ - Lista todos os momentos
+    GET /api/momentos/ - Lista todos os momentos (com paginação)
     POST /api/momentos/ - Cria um novo momento
     """
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['titulo', 'descricao', 'tags__nome']
     ordering_fields = ['created_at', 'views']
-    # ✅ REMOVIDO: ordering = ['-created_at']  # Estava sobrescrevendo nossa ordenação customizada
+    pagination_class = MomentoPagination  # ✅ NOVO: Ativa paginação
     
     def get_queryset(self):
         # ✅ Busca base com prefetch para otimização
@@ -57,39 +64,27 @@ class MomentoListCreateView(generics.ListCreateAPIView):
             ).distinct()
             logger.info(f"🔍 Busca por texto: {search}")
         
-        # ✅ ORDENAÇÃO CORRIGIDA
+        # ✅ ORDENAÇÃO CORRIGIDA (INVERTIDA)
         sort_by = self.request.query_params.get('sort', 'recent')
         logger.info(f"📊 Ordenação solicitada: {sort_by}")
         
-        if sort_by == 'popular':
-            # Ordenar por visualizações (mais vistas primeiro)
+        if sort_by == 'trending':
+            # ✅ EM ALTA = Ordenar por visualizações (mais vistas primeiro)
             queryset = queryset.order_by('-views', '-created_at')
-            logger.info(f"📊 Ordenando por views (popular)")
+            logger.info(f"🔥 Ordenando por views (trending/em alta)")
             
-        elif sort_by == 'trending':
-            # Ordenar por curtidas (em alta)
+        elif sort_by == 'popular':
+            # ✅ POPULARES = Ordenar por curtidas (mais curtidas primeiro)
             # ✅ CRÍTICO: Anotar com alias diferente da property do modelo
             queryset = queryset.annotate(
                 likes_count=Count('likes', distinct=True)
             ).order_by('-likes_count', '-views', '-created_at')
-            logger.info(f"📊 Ordenando por curtidas (trending)")
+            logger.info(f"❤️ Ordenando por curtidas (popular)")
             
         else:  # recent (padrão)
             # Ordenar por data de criação (mais recentes primeiro)
             queryset = queryset.order_by('-created_at')
-            logger.info(f"📊 Ordenando por data (recent)")
-        
-        # ✅ Log de debug: mostrar TODOS os resultados após ordenação
-        momentos_list = list(queryset)
-        logger.info(f"📊 TOTAL de momentos encontrados: {len(momentos_list)}")
-        logger.info(f"📋 TODOS os momentos na ordem do backend ({sort_by}):")
-        for idx, m in enumerate(momentos_list, 1):
-            # Pegar likes_count do campo anotado OU contar diretamente
-            if sort_by == 'trending':
-                likes = getattr(m, 'likes_count', m.likes.count())
-            else:
-                likes = m.likes.count()
-            logger.info(f"  {idx}. '{m.titulo}': {m.views} views, {likes} likes, criado em {m.created_at}")
+            logger.info(f"📅 Ordenando por data (recent)")
         
         return queryset
     

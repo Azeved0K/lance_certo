@@ -16,12 +16,19 @@ const Home = () => {
     const searchQuery = searchParams.get('search') || '';
     const tagParam = searchParams.get('tag') || 'Todos';
     const sortParam = searchParams.get('sort') || 'recent';
+    const pageParam = parseInt(searchParams.get('page') || '1', 10);
 
     const [selectedTag, setSelectedTag] = useState(tagParam);
     const [sortBy, setSortBy] = useState(sortParam);
     const [momentos, setMomentos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    // ✅ NOVO: Estados de paginação
+    const [currentPage, setCurrentPage] = useState(pageParam);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const [pageInput, setPageInput] = useState(pageParam.toString());
 
     // ✅ Sincronizar estado com URL
     useEffect(() => {
@@ -30,26 +37,38 @@ const Home = () => {
         if (searchQuery) newSearchParams.set('search', searchQuery);
         if (selectedTag !== 'Todos') newSearchParams.set('tag', selectedTag);
         if (sortBy !== 'recent') newSearchParams.set('sort', sortBy);
+        if (currentPage > 1) newSearchParams.set('page', currentPage.toString());
 
         setSearchParams(newSearchParams, { replace: true });
-    }, [selectedTag, sortBy, searchQuery, setSearchParams]);
+    }, [selectedTag, sortBy, searchQuery, currentPage, setSearchParams]);
 
-    // ✅ Buscar momentos quando filtros mudarem
+    // ✅ Resetar para página 1 quando filtros mudarem
+    useEffect(() => {
+        setCurrentPage(1);
+        setPageInput('1');
+    }, [selectedTag, sortBy, searchQuery]);
+
+    // ✅ Buscar momentos quando página ou filtros mudarem
     useEffect(() => {
         fetchMomentos();
-    }, [selectedTag, sortBy, searchQuery, user]);
+        // Scroll para o topo ao mudar de página
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [selectedTag, sortBy, searchQuery, currentPage, user]);
 
     const fetchMomentos = async () => {
         try {
             setLoading(true);
             setError('');
 
-            const params = {};
+            const params = {
+                page: currentPage,
+                page_size: 9  // ✅ 9 momentos por página (3x3)
+            };
 
-            // ✅ NOVO: Se sortBy for 'meus', filtrar por usuário logado
+            // ✅ Se sortBy for 'meus', filtrar por usuário logado
             if (sortBy === 'meus' && user) {
                 params.usuario = user.username;
-                params.sort = 'recent'; // Ordenar por mais recentes
+                params.sort = 'recent';
             } else {
                 params.sort = sortBy;
             }
@@ -67,13 +86,17 @@ const Home = () => {
             console.log('🔍 Parâmetros enviados para API:', params);
 
             const response = await momentosService.listar(params);
-            const data = response.data || [];
 
-            // Garantir que data é array
-            const filteredData = Array.isArray(data) ? data : [];
+            // ✅ Resposta paginada do Django REST Framework
+            const data = response.data?.results || response.data || [];
+            const count = response.data?.count || 0;
 
-            setMomentos(filteredData);
-            console.log('✅ Momentos carregados:', filteredData.length, 'itens');
+            setMomentos(Array.isArray(data) ? data : []);
+            setTotalCount(count);
+            setTotalPages(Math.ceil(count / 9));
+
+            console.log('✅ Momentos carregados:', data.length, 'itens');
+            console.log('📊 Total:', count, '| Página:', currentPage, '/', Math.ceil(count / 9));
         } catch (err) {
             console.error('❌ Erro ao carregar momentos:', err);
             setError('Erro ao carregar momentos');
@@ -98,6 +121,7 @@ const Home = () => {
 
     const handleDelete = (momentoId) => {
         setMomentos(prevMomentos => prevMomentos.filter(m => m.id !== momentoId));
+        setTotalCount(prev => prev - 1);
     };
 
     const handleTagChange = (tag) => {
@@ -114,6 +138,51 @@ const Home = () => {
         window.location.href = '/';
     };
 
+    // ✅ NOVO: Funções de navegação de página
+    const goToFirstPage = () => {
+        setCurrentPage(1);
+        setPageInput('1');
+    };
+
+    const goToPreviousPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+            setPageInput((currentPage - 1).toString());
+        }
+    };
+
+    const goToNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+            setPageInput((currentPage + 1).toString());
+        }
+    };
+
+    const goToLastPage = () => {
+        setCurrentPage(totalPages);
+        setPageInput(totalPages.toString());
+    };
+
+    const handlePageInputChange = (e) => {
+        const value = e.target.value;
+        // Permitir apenas números
+        if (/^\d*$/.test(value)) {
+            setPageInput(value);
+        }
+    };
+
+    const handlePageInputSubmit = (e) => {
+        e.preventDefault();
+        const pageNumber = parseInt(pageInput, 10);
+
+        if (pageNumber && pageNumber >= 1 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+        } else {
+            // Resetar para página atual se inválido
+            setPageInput(currentPage.toString());
+        }
+    };
+
     const formatDuration = (seconds) => {
         if (!seconds) return '0:00';
         const mins = Math.floor(seconds / 60);
@@ -128,7 +197,7 @@ const Home = () => {
             case 'trending':
                 return 'Em Alta';
             case 'popular':
-                return 'Mais Vistos';
+                return 'Mais Curtidos';
             case 'recent':
             default:
                 return 'Recentes';
@@ -152,8 +221,8 @@ const Home = () => {
                 );
             case 'popular':
                 return (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" fill="currentColor" />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                 );
             case 'recent':
@@ -219,14 +288,16 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {/* ✅ Barra de Ordenação - COM "SEUS VÍDEOS" */}
+                    {/* Barra de Ordenação */}
                     <div className="sortBar">
                         <div className="sortInfo">
                             {getSortIcon()}
                             <span className="sortLabel">
                                 {getSortLabel()}
                             </span>
-                            <span className="count">({momentos.length} momentos)</span>
+                            <span className="count">
+                                ({totalCount} {totalCount === 1 ? 'momento' : 'momentos'})
+                            </span>
                         </div>
 
                         <div className="sortButtons">
@@ -244,7 +315,7 @@ const Home = () => {
                             <button
                                 onClick={() => handleSortChange('trending')}
                                 className={`sortBtn ${sortBy === 'trending' ? 'sortBtnActive' : ''}`}
-                                title="Momentos com mais curtidas"
+                                title="Momentos com mais visualizações"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" />
@@ -254,15 +325,14 @@ const Home = () => {
                             <button
                                 onClick={() => handleSortChange('popular')}
                                 className={`sortBtn ${sortBy === 'popular' ? 'sortBtnActive' : ''}`}
-                                title="Momentos com mais visualizações"
+                                title="Momentos com mais curtidas"
                             >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" strokeWidth="2" />
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                                 Populares
                             </button>
 
-                            {/* ✅ NOVO BOTÃO: Seus Vídeos (só aparece se logado) */}
                             {user && (
                                 <button
                                     onClick={() => handleSortChange('meus')}
@@ -307,23 +377,104 @@ const Home = () => {
 
                 {/* Grid de Momentos */}
                 {!loading && momentos.length > 0 && (
-                    <div className="grid grid-cols-3">
-                        {momentos.map((momento) => (
-                            <MomentoCard
-                                key={momento.id}
-                                momento={{
-                                    ...momento,
-                                    thumbnail: momento.thumbnail || 'https://via.placeholder.com/400x300?text=Sem+Thumbnail',
-                                    duracao: formatDuration(momento.duracao),
-                                    data: momento.created_at,
-                                    likes: momento.total_likes,
-                                    usuario: momento.usuario
-                                }}
-                                onLike={handleLike}
-                                onDelete={handleDelete}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-3">
+                            {momentos.map((momento) => (
+                                <MomentoCard
+                                    key={momento.id}
+                                    momento={{
+                                        ...momento,
+                                        thumbnail: momento.thumbnail || 'https://via.placeholder.com/400x300?text=Sem+Thumbnail',
+                                        duracao: formatDuration(momento.duracao),
+                                        data: momento.created_at,
+                                        likes: momento.total_likes,
+                                        usuario: momento.usuario
+                                    }}
+                                    onLike={handleLike}
+                                    onDelete={handleDelete}
+                                />
+                            ))}
+                        </div>
+
+                        {/* ✅ NOVO: Paginação */}
+                        {totalPages > 1 && (
+                            <div className="pagination">
+                                <div className="pagination-info">
+                                    Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+                                    <span className="pagination-total">
+                                        ({(currentPage - 1) * 9 + 1}-{Math.min(currentPage * 9, totalCount)} de {totalCount})
+                                    </span>
+                                </div>
+
+                                <div className="pagination-controls">
+                                    {/* Primeira Página */}
+                                    <button
+                                        onClick={goToFirstPage}
+                                        disabled={currentPage === 1}
+                                        className="pagination-btn"
+                                        title="Primeira página"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+
+                                    {/* Página Anterior */}
+                                    <button
+                                        onClick={goToPreviousPage}
+                                        disabled={currentPage === 1}
+                                        className="pagination-btn"
+                                        title="Página anterior"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        Anterior
+                                    </button>
+
+                                    {/* Input de Página */}
+                                    <form onSubmit={handlePageInputSubmit} className="pagination-input-form">
+                                        <span>Ir para:</span>
+                                        <input
+                                            type="text"
+                                            value={pageInput}
+                                            onChange={handlePageInputChange}
+                                            className="pagination-input"
+                                            placeholder={currentPage.toString()}
+                                        />
+                                        <button type="submit" className="pagination-go-btn">
+                                            Ir
+                                        </button>
+                                    </form>
+
+                                    {/* Próxima Página */}
+                                    <button
+                                        onClick={goToNextPage}
+                                        disabled={currentPage === totalPages}
+                                        className="pagination-btn"
+                                        title="Próxima página"
+                                    >
+                                        Próxima
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+
+                                    {/* Última Página */}
+                                    <button
+                                        onClick={goToLastPage}
+                                        disabled={currentPage === totalPages}
+                                        className="pagination-btn"
+                                        title="Última página"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M13 5l7 7-7 7M6 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {/* Empty State */}
