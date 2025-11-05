@@ -1,16 +1,64 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from usuarios.models import Usuario
+from .models import Momento, Tag, Like, Comentario
 
-@admin.register(Usuario)
-class UsuarioAdmin(UserAdmin):
-    list_display = ['username', 'email', 'first_name', 'last_name', 'is_staff', 'created_at']
-    list_filter = ['is_staff', 'is_superuser', 'is_active', 'created_at']
-    search_fields = ['username', 'email', 'first_name', 'last_name']
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['nome', 'slug', 'total_momentos', 'created_at']
+    search_fields = ['nome', 'slug']
+    prepopulated_fields = {'slug': ('nome',)}
+    ordering = ['nome']
+    
+    def total_momentos(self, obj):
+        return obj.momentos.count()
+    total_momentos.short_description = 'Total de Momentos'
+
+@admin.register(Momento)
+class MomentoAdmin(admin.ModelAdmin):
+    list_display = ['titulo', 'usuario', 'views', 'total_likes', 'total_comentarios', 'created_at']
+    list_filter = ['created_at', 'tags']
+    search_fields = ['titulo', 'descricao', 'usuario__username']
+    readonly_fields = ['views', 'created_at', 'updated_at', 'total_likes', 'total_comentarios']
+    filter_horizontal = ['tags']
     ordering = ['-created_at']
     
-    fieldsets = UserAdmin.fieldsets + (
-        ('Informações Adicionais', {
-            'fields': ('avatar', 'bio', 'data_nascimento')
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('usuario', 'titulo', 'descricao')
+        }),
+        ('Mídia', {
+            'fields': ('video', 'thumbnail', 'duracao')
+        }),
+        ('Organização', {
+            'fields': ('tags',)
+        }),
+        ('Estatísticas', {
+            'fields': ('views', 'total_likes', 'total_comentarios', 'created_at', 'updated_at')
         }),
     )
+    
+    def total_comentarios(self, obj):
+        return obj.comentarios.count()
+    total_comentarios.short_description = 'Total de Comentários'
+
+@admin.register(Like)
+class LikeAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'momento', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['usuario__username', 'momento__titulo']
+    ordering = ['-created_at']
+    
+    def has_add_permission(self, request):
+        # Prevenir criação manual via admin (likes devem vir da API)
+        return False
+
+@admin.register(Comentario)
+class ComentarioAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'momento', 'texto_resumido', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['usuario__username', 'momento__titulo', 'texto']
+    readonly_fields = ['created_at', 'updated_at']
+    ordering = ['-created_at']
+    
+    def texto_resumido(self, obj):
+        return obj.texto[:50] + '...' if len(obj.texto) > 50 else obj.texto
+    texto_resumido.short_description = 'Texto'

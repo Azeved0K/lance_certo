@@ -37,16 +37,22 @@ const Home = () => {
     // ✅ Buscar momentos quando filtros mudarem
     useEffect(() => {
         fetchMomentos();
-    }, [selectedTag, sortBy, searchQuery]);
+    }, [selectedTag, sortBy, searchQuery, user]);
 
     const fetchMomentos = async () => {
         try {
             setLoading(true);
             setError('');
 
-            const params = {
-                sort: sortBy // ✅ CRÍTICO: Enviar corretamente para o backend
-            };
+            const params = {};
+
+            // ✅ NOVO: Se sortBy for 'meus', filtrar por usuário logado
+            if (sortBy === 'meus' && user) {
+                params.usuario = user.username;
+                params.sort = 'recent'; // Ordenar por mais recentes
+            } else {
+                params.sort = sortBy;
+            }
 
             // Filtrar por tag
             if (selectedTag !== 'Todos') {
@@ -68,15 +74,6 @@ const Home = () => {
 
             setMomentos(filteredData);
             console.log('✅ Momentos carregados:', filteredData.length, 'itens');
-            console.log('📊 Ordenação aplicada:', sortBy);
-
-            // ✅ Log COMPLETO de TODOS os momentos para debug
-            if (filteredData.length > 0) {
-                console.log('📋 TODOS os momentos na ordem recebida:');
-                filteredData.forEach((m, index) => {
-                    console.log(`  ${index + 1}. "${m.titulo}": ${m.views} views, ${m.total_likes || m.likes || 0} likes, ${m.created_at}`);
-                });
-            }
         } catch (err) {
             console.error('❌ Erro ao carregar momentos:', err);
             setError('Erro ao carregar momentos');
@@ -103,7 +100,6 @@ const Home = () => {
         setMomentos(prevMomentos => prevMomentos.filter(m => m.id !== momentoId));
     };
 
-    // ✅ Handlers com logs para debug
     const handleTagChange = (tag) => {
         console.log('🏷️ Tag selecionada:', tag);
         setSelectedTag(tag);
@@ -118,7 +114,6 @@ const Home = () => {
         window.location.href = '/';
     };
 
-    // ✅ Função para formatar duração
     const formatDuration = (seconds) => {
         if (!seconds) return '0:00';
         const mins = Math.floor(seconds / 60);
@@ -126,9 +121,10 @@ const Home = () => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // ✅ Obter nome da ordenação atual
     const getSortLabel = () => {
         switch (sortBy) {
+            case 'meus':
+                return 'Seus Vídeos';
             case 'trending':
                 return 'Em Alta';
             case 'popular':
@@ -139,9 +135,15 @@ const Home = () => {
         }
     };
 
-    // ✅ Obter ícone da ordenação atual
     const getSortIcon = () => {
         switch (sortBy) {
+            case 'meus':
+                return (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="8" r="4" strokeWidth="2" />
+                        <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" strokeWidth="2" />
+                    </svg>
+                );
             case 'trending':
                 return (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -217,7 +219,7 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {/* Barra de Ordenação - MELHORADA */}
+                    {/* ✅ Barra de Ordenação - COM "SEUS VÍDEOS" */}
                     <div className="sortBar">
                         <div className="sortInfo">
                             {getSortIcon()}
@@ -259,6 +261,21 @@ const Home = () => {
                                 </svg>
                                 Populares
                             </button>
+
+                            {/* ✅ NOVO BOTÃO: Seus Vídeos (só aparece se logado) */}
+                            {user && (
+                                <button
+                                    onClick={() => handleSortChange('meus')}
+                                    className={`sortBtn ${sortBy === 'meus' ? 'sortBtnActive' : ''}`}
+                                    title="Seus vídeos publicados"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <circle cx="12" cy="8" r="4" strokeWidth="2" />
+                                        <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" strokeWidth="2" />
+                                    </svg>
+                                    Seus Vídeos
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -316,18 +333,22 @@ const Home = () => {
                         <h3 className="emptyTitle">
                             {searchQuery
                                 ? `Nenhum resultado para "${searchQuery}"`
-                                : 'Nenhum momento encontrado'
+                                : sortBy === 'meus'
+                                    ? 'Você ainda não publicou nenhum vídeo'
+                                    : 'Nenhum momento encontrado'
                             }
                         </h3>
                         <p className="emptyText">
                             {searchQuery
                                 ? 'Tente buscar com outros termos'
-                                : selectedTag === 'Todos'
-                                    ? 'Seja o primeiro a capturar um momento!'
-                                    : 'Tente selecionar outra categoria'
+                                : sortBy === 'meus'
+                                    ? 'Comece a capturar seus melhores momentos!'
+                                    : selectedTag === 'Todos'
+                                        ? 'Seja o primeiro a capturar um momento!'
+                                        : 'Tente selecionar outra categoria'
                             }
                         </p>
-                        {searchQuery && (
+                        {searchQuery ? (
                             <button
                                 onClick={clearSearch}
                                 className="btn btn-primary"
@@ -335,12 +356,20 @@ const Home = () => {
                             >
                                 Limpar busca
                             </button>
+                        ) : sortBy === 'meus' && (
+                            <Link
+                                to="/capture"
+                                className="btn btn-primary"
+                                style={{ marginTop: '1rem' }}
+                            >
+                                Capturar Primeiro Momento
+                            </Link>
                         )}
                     </div>
                 )}
 
                 {/* CTA */}
-                {!searchQuery && (
+                {!searchQuery && sortBy !== 'meus' && (
                     <div className="cta">
                         <h2 className="ctaTitle">Capture Seu Momento! 🎥</h2>
                         <p className="ctaText">
