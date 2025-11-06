@@ -1,116 +1,536 @@
-# 🎥 Lance Certo — Captura Inteligente de Melhores Momentos
+# 🎥 Lance Certo — Plataforma Inteligente de Captura e Compartilhamento de Momentos Esportivos
 
 [![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)]()
+[![Django](https://img.shields.io/badge/django-5.2-green)]()
+[![React](https://img.shields.io/badge/react-19.1-blue)]()
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.x-red)]()
-[![FFmpeg](https://img.shields.io/badge/FFmpeg-enabled-green)]()
 
 > **Projeto Interdisciplinar de Extensão II — SETREM**  
 > Desenvolvido por alunos de Engenharia de Computação com apoio do LARCC
 
 ---
 
-## 💭 Motivação
+## 📝 Sobre o Projeto
 
-Registrar e compartilhar os melhores momentos de uma partida esportiva ainda é um desafio em ambientes **amadores e comunitários**.  
-Os métodos tradicionais exigem gravações longas, edição manual e equipamentos caros — tornando inviável para atletas locais.
+O **Lance Certo** é uma plataforma completa que democratiza o acesso à tecnologia de captura e compartilhamento de momentos esportivos. Combinando um sistema de gravação inteligente com uma rede social integrada, a solução permite que atletas amadores e comunitários capturem, editem e compartilhem seus melhores momentos de forma simples e acessível.
 
-O **Lance Certo** surge para **democratizar o acesso à tecnologia de gravação esportiva**, criando uma solução simples, de **baixo custo** e fácil operação.  
-Usando apenas **um notebook com webcam** e **um botão de acionamento manual**, o sistema grava continuamente e salva os **últimos minutos da partida** ao toque de um botão — sem necessidade de edição posterior.
+### 🎯 Problema Identificado
 
----
+Registrar e compartilhar os melhores momentos de uma partida esportiva ainda é um desafio em ambientes **amadores e comunitários**:
+- 📹 Gravações longas que desperdiçam espaço
+- ✂️ Necessidade de edição manual complexa
+- 💰 Equipamentos caros e inacessíveis
+- 🔄 Falta de plataforma integrada para compartilhamento
 
-## ⚙️ Arquitetura e Tecnologias
+### 💡 Nossa Solução
 
-O projeto consiste em um **protótipo funcional** que une conceitos de **engenharia de sistemas, estruturas de dados e visão computacional**.
-
-### 🧩 Componentes Principais
-
-- 🎞️ **OpenCV** → Captura e manipulação de vídeo em tempo real  
-- 🧠 **FFmpeg** → Compressão e codificação em H.264 (MP4)  
-- 🔁 **Buffer Circular em RAM** → Armazena continuamente os últimos frames  
-- ⚡ **Multi-threading (Produtor-Consumidor)** → Baixa latência e responsividade  
-- 💻 **Notebook como plataforma única** → Integração total de hardware e software  
+Uma plataforma web moderna que integra:
+- **Captura Inteligente**: Grave continuamente e salve apenas os últimos 60 segundos ao pressionar um botão
+- **Rede Social**: Compartilhe, curta e descubra momentos incríveis de outros atletas
+- **Interface Intuitiva**: Design responsivo e fácil de usar
+- **Baixo Custo**: Funciona com equipamentos acessíveis (notebook + webcam)
 
 ---
 
-## 🧪 Metodologia
+## ✨ Funcionalidades
 
-O projeto segue uma **abordagem experimental** de pesquisa aplicada, dividida em três fases:
+### 🎬 Sistema de Captura
+- ✅ Gravação contínua com buffer circular de 60 segundos
+- ✅ Captura via webcam ou tela do computador
+- ✅ Salvamento instantâneo de clipes ao pressionar botão
+- ✅ Múltiplos clipes por sessão de gravação
+- ✅ Preview em tempo real
+- ✅ Compressão otimizada (H.264/WebM)
 
-1. **Desenvolvimento do protótipo** → Implementação inicial e testes de hardware/software;  
-2. **Testes de usabilidade** → Coleta de feedback com usuários reais em quadras;  
-3. **Análise de desempenho** → Avaliação quantitativa (latência, armazenamento e estabilidade).
+### 🌐 Rede Social
+- ✅ Feed de momentos com filtros e ordenação
+- ✅ Sistema de curtidas e visualizações
+- ✅ Tags e categorias (Futebol, Basquete, Vôlei, etc.)
+- ✅ Perfil de usuário com estatísticas
+- ✅ Busca inteligente de momentos
+- ✅ Player de vídeo integrado
+- ✅ Sugestões de vídeos relacionados
+- ✅ Paginação otimizada
+
+### 👤 Perfil e Personalização
+- ✅ Avatar e biografia personalizável
+- ✅ Estatísticas de visualizações e curtidas
+- ✅ Gerenciamento de momentos publicados
+- ✅ Edição e exclusão de conteúdo próprio
+
+### 🔐 Autenticação
+- ✅ Sistema de login/registro seguro
+- ✅ Sessões com Django Session Authentication
+- ✅ Proteção CSRF
+- ✅ Autorização baseada em permissões
 
 ---
 
-## 🧭 Cronograma
+## 🏗️ Arquitetura
 
-| Etapa | Período | Status |
-|-------|----------|--------|
-| Planejamento e Revisão Teórica | Jan–Abr/2025 | ✅ Concluído |
-| Desenvolvimento do Protótipo | Mai–Out/2025 | 🚧 Em progresso |
-| Testes e Validação | Nov–Dez/2025 | ⏳ A iniciar |
-| Integração com LARCC e Análise de Dados | 2026 | 🔜 Planejado |
+### 📊 Diagrama de Componentes
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    FRONTEND (React)                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐│
+│  │   Home   │  │ Capture  │  │  Profile │  │  Video  ││
+│  └──────────┘  └──────────┘  └──────────┘  └─────────┘│
+│         │              │              │            │     │
+│         └──────────────┴──────────────┴────────────┘     │
+│                        │                                 │
+│                    API Client                            │
+└─────────────────────────────────────────────────────────┘
+                           │
+                      HTTPS/REST
+                           │
+┌─────────────────────────────────────────────────────────┐
+│                 BACKEND (Django REST)                    │
+│  ┌──────────────────┐      ┌──────────────────┐        │
+│  │  Auth Endpoints  │      │ Momentos Endpoints│        │
+│  └──────────────────┘      └──────────────────┘        │
+│           │                         │                    │
+│  ┌────────┴─────────────────────────┴────────┐         │
+│  │         Business Logic Layer               │         │
+│  │  • Serializers  • Views  • Permissions    │         │
+│  └────────┬─────────────────────────┬────────┘         │
+│           │                         │                    │
+│  ┌────────┴────────┐      ┌────────┴────────┐         │
+│  │  User Model     │      │  Momento Model  │         │
+│  │  • Usuario      │      │  • Tags         │         │
+│  │                 │      │  • Likes        │         │
+│  └─────────────────┘      │  • Comentarios  │         │
+│                            └─────────────────┘         │
+└─────────────────────────────────────────────────────────┘
+                           │
+                      PostgreSQL
+```
+
+### 🔧 Tecnologias Utilizadas
+
+#### Frontend
+- **React 19.1** - Framework UI
+- **React Router 7** - Roteamento SPA
+- **Axios** - Cliente HTTP
+- **Vite** - Build tool e dev server
+- **CSS Modules** - Estilização modular
+
+#### Backend
+- **Django 5.2** - Framework web
+- **Django REST Framework** - API REST
+- **PostgreSQL** - Banco de dados
+- **Pillow** - Processamento de imagens
+- **python-decouple** - Gerenciamento de configurações
+
+#### Captura de Vídeo
+- **MediaRecorder API** - Gravação no navegador
+- **WebRTC** - Acesso a câmera/tela
+- **Buffer Circular** - Armazenamento em memória
+- **H.264/WebM** - Codecs de vídeo
+
+#### Infraestrutura
+- **CORS Headers** - Comunicação cross-origin
+- **Session Authentication** - Autenticação stateful
+- **CSRF Protection** - Segurança contra ataques
+
+---
+
+## 📂 Estrutura do Projeto
+
+```
+lance-certo/
+│
+├── backend/                      # Django Backend
+│   ├── config/                   # Configurações do projeto
+│   │   ├── settings.py          # Configurações principais
+│   │   ├── urls.py              # Roteamento principal
+│   │   └── wsgi.py              # WSGI config
+│   │
+│   ├── usuarios/                 # App de usuários
+│   │   ├── models.py            # Modelo Usuario (AbstractUser)
+│   │   ├── serializers.py       # Serialização de dados
+│   │   ├── views.py             # Login, Register, Profile
+│   │   └── urls.py              # Rotas de autenticação
+│   │
+│   ├── momentos/                 # App de momentos
+│   │   ├── models.py            # Modelos (Momento, Tag, Like, Comentario)
+│   │   ├── serializers.py       # Serialização de momentos
+│   │   ├── views.py             # CRUD, Like, Comment, Search
+│   │   └── urls.py              # Rotas de momentos
+│   │
+│   ├── media/                    # Uploads (vídeos, thumbnails)
+│   ├── requirements.txt          # Dependências Python
+│   └── manage.py                 # CLI Django
+│
+├── frontend/                     # React Frontend
+│   ├── public/                   # Arquivos estáticos
+│   │   └── favicon.svg
+│   │
+│   ├── src/
+│   │   ├── components/           # Componentes reutilizáveis
+│   │   │   ├── layout/
+│   │   │   │   └── Header.jsx   # Header da aplicação
+│   │   │   ├── gallery/
+│   │   │   │   └── MomentoCard.jsx
+│   │   │   ├── profile/
+│   │   │   │   └── EditProfileModal.jsx
+│   │   │   └── video/
+│   │   │       └── VideoSuggestions.jsx
+│   │   │
+│   │   ├── contexts/             # Context API
+│   │   │   └── AuthContext.jsx  # Contexto de autenticação
+│   │   │
+│   │   ├── pages/                # Páginas
+│   │   │   ├── Home.jsx         # Feed de momentos
+│   │   │   ├── Capture.jsx      # Captura de vídeo
+│   │   │   ├── Profile.jsx      # Perfil do usuário
+│   │   │   ├── VideoPlayer.jsx  # Player de vídeo
+│   │   │   ├── Login.jsx        # Login
+│   │   │   └── Register.jsx     # Registro
+│   │   │
+│   │   ├── services/             # Serviços
+│   │   │   └── api.js           # Cliente API (Axios)
+│   │   │
+│   │   ├── styles/               # Estilos CSS
+│   │   │   ├── global.css
+│   │   │   ├── components/
+│   │   │   └── pages/
+│   │   │
+│   │   ├── App.jsx               # Componente raiz
+│   │   └── main.jsx              # Entry point
+│   │
+│   ├── package.json              # Dependências Node
+│   └── vite.config.js            # Configuração Vite
+│
+├── docs/                         # Documentação
+│   └── Projeto_Interdisciplinar_II.pdf
+│
+└── README.md                     # Este arquivo
+```
+
+---
+
+## 🚀 Como Executar
+
+### 📋 Pré-requisitos
+
+- Python 3.10+
+- Node.js 20+
+- PostgreSQL 14+
+- Git
+
+### 🔧 Configuração do Backend
+
+1. **Clone o repositório**
+```bash
+git clone https://github.com/seu-usuario/lance-certo.git
+cd lance-certo/backend
+```
+
+2. **Crie um ambiente virtual**
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+venv\Scripts\activate     # Windows
+```
+
+3. **Instale as dependências**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Configure as variáveis de ambiente**
+
+Crie um arquivo `.env` na pasta `backend/` com:
+
+```env
+SECRET_KEY=sua-chave-secreta-django
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+DB_NAME=lance_certo
+DB_USER=postgres
+DB_PASSWORD=sua-senha
+DB_HOST=localhost
+DB_PORT=5432
+
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+```
+
+5. **Execute as migrações**
+```bash
+python manage.py migrate
+```
+
+6. **Crie um superusuário**
+```bash
+python manage.py createsuperuser
+```
+
+7. **Inicie o servidor**
+```bash
+python manage.py runserver
+```
+
+Backend estará rodando em `http://localhost:8000`
+
+### ⚛️ Configuração do Frontend
+
+1. **Navegue até a pasta frontend**
+```bash
+cd ../frontend
+```
+
+2. **Instale as dependências**
+```bash
+npm install
+```
+
+3. **Inicie o servidor de desenvolvimento**
+```bash
+npm run dev
+```
+
+Frontend estará rodando em `http://localhost:5173`
+
+### 🌐 Acessando a Aplicação
+
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000/api
+- **Admin Django**: http://localhost:8000/admin
+
+---
+
+## 📡 API Endpoints
+
+### Autenticação (`/api/auth/`)
+
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| POST | `/register/` | Criar nova conta | Não |
+| POST | `/login/` | Fazer login | Não |
+| POST | `/logout/` | Fazer logout | Sim |
+| GET | `/user/` | Dados do usuário atual | Sim |
+| PATCH | `/user/` | Atualizar perfil | Sim |
+| GET | `/csrf/` | Obter token CSRF | Não |
+
+### Momentos (`/api/momentos/`)
+
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| GET | `/` | Listar momentos (com filtros) | Não |
+| POST | `/` | Criar novo momento | Sim |
+| GET | `/{id}/` | Detalhes de um momento | Não |
+| PATCH | `/{id}/` | Atualizar momento | Sim |
+| DELETE | `/{id}/` | Deletar momento | Sim |
+| POST | `/{id}/like/` | Curtir momento | Sim |
+| DELETE | `/{id}/like/` | Descurtir momento | Sim |
+| POST | `/{id}/view/` | Incrementar visualização | Não |
+| GET | `/{id}/suggestions/` | Sugestões de vídeos | Não |
+| GET | `/{id}/comentarios/` | Listar comentários | Não |
+| POST | `/{id}/comentarios/` | Criar comentário | Sim |
+| DELETE | `/comentarios/{id}/` | Deletar comentário | Sim |
+
+### Tags (`/api/momentos/tags/`)
+
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| GET | `/` | Listar todas as tags | Não |
+
+---
+
+## 🎨 Design System
+
+### Paleta de Cores
+
+```css
+--primary-color: #3B82F6;      /* Azul principal */
+--primary-hover: #2563EB;      /* Azul hover */
+--secondary-color: #10B981;    /* Verde sucesso */
+--danger-color: #EF4444;       /* Vermelho perigo */
+--gray-50 a 900: ...           /* Escala de cinza */
+```
+
+### Tipografia
+
+- **Fonte**: System fonts (SF Pro, Segoe UI, Roboto)
+- **Tamanhos**: 0.75rem - 2.5rem
+- **Pesos**: 400 (regular), 600 (semibold), 700 (bold), 800 (extrabold)
+
+---
+
+## 🧪 Metodologia de Desenvolvimento
+
+### Abordagem Ágil
+
+O projeto segue uma abordagem experimental de pesquisa aplicada:
+
+1. **Desenvolvimento Iterativo** → Protótipos e testes incrementais
+2. **Testes de Usabilidade** → Feedback com usuários reais
+3. **Análise de Desempenho** → Métricas de latência e estabilidade
+4. **Integração com LARCC** → Testes em infraestrutura avançada
+
+### Fases do Projeto
+
+| Fase | Período | Status |
+|------|---------|--------|
+| Planejamento e Revisão Teórica | Jan-Abr/2025 | ✅ Concluído |
+| Desenvolvimento do Protótipo | Mai-Out/2025 | 🚧 Em progresso |
+| Testes e Validação | Nov-Dez/2025 | ⏳ A iniciar |
+| Integração com LARCC | 2026 | 🔜 Planejado |
+
+---
+
+## 💡 Funcionalidades Futuras
+
+### Em Desenvolvimento
+- 🔄 Edição básica de vídeos (corte, filtros)
+- 📊 Dashboard com analytics detalhados
+- 🔔 Sistema de notificações em tempo real
+- 🎯 Sistema de campeonatos, reservas e torneios
+
+### Planejadas
+- 🤖 Detecção automática de momentos importantes (IA)
+- 🏆 Sistema de conquistas e gamificação
+- 👥 Equipes e organizações
+- 💬 Chat em tempo real
+- 🌍 Múltiplos idiomas
+
+---
+
+## 📊 Métricas de Desempenho
+
+### Objetivos Técnicos
+
+- ⚡ Latência de captura: < 100ms
+- 💾 Tamanho de buffer: 60 segundos (~50-100MB)
+- 🎥 Taxa de quadros: 30 FPS mínimo
+- 📦 Compressão de vídeo: ~80% de redução
+- 🚀 Tempo de upload: < 10s para clipes de 60s
 
 ---
 
 ## 💰 Orçamento
 
 | Item | Quantidade | Valor (R$) |
-|------|-------------|-------------|
+|------|------------|------------|
 | SSD Sandisk 1TB | 1 | 451,05 |
 | Notebook Dell Vostro i5 10ª, 16GB RAM | 1 | 3.762,00 |
-| **Total Geral** |  | **4.213,05** |
+| **Total** | | **4.213,05** |
 
 ---
 
-## 📘 Documentação
+## 📚 Documentação Técnica
 
-Toda a documentação técnica está disponível em:  
-📄 [`/docs/Projeto_Interdisciplinar_II.pdf`](./docs/Projeto_Interdisciplinar_II.pdf)
+Para informações detalhadas sobre:
+- Estruturas de dados (buffer circular)
+- Pipeline de vídeo (OpenCV + FFmpeg)
+- Métodos de coleta e análise de dados
+- Métricas de desempenho e testes de usabilidade
 
-Acesse para entender:
-- Estruturas de dados (buffer circular);
-- Pipeline de vídeo (OpenCV + FFmpeg);
-- Métodos de coleta e análise de dados;
-- Métricas de desempenho e testes de usabilidade.
-
----
-
-⚠️ Termos de Uso
-
-Este é um projeto experimental e acadêmico, desenvolvido por alunos da Sociedade Educacional Três de Maio (SETREM).
-Por favor, não utilize o sistema para fins comerciais ou de captura automatizada em larga escala.
-
-Para uso pessoal, testes e aprendizado, o código está licenciado sob a MIT License.
+Acesse: [`/docs/Projeto_Interdisciplinar_II.pdf`](./docs/Projeto_Interdisciplinar_II.pdf)
 
 ---
 
-| Nome                 | Função                                    | Instituição |
-| -------------------- | ----------------------------------------- | ----------- |
-| **Enzo Allebrand**   | Desenvolvimento e Integração de Hardware  | SETREM      |
-| **Kauã Patricki**    | Estrutura de Dados e Testes de Desempenho | SETREM      |
-| **Leonardo Herkert** | Documentação Técnica e Coordenação        | SETREM      |
+## 👥 Equipe
+
+| Nome | Função | Contato |
+|------|--------|---------|
+| **Enzo Allebrand** | Desenvolvimento e Testes de Desempenho | - |
+| **Kauã Patricki** | Desenvolvimento e Testes de Desempenho | - |
+| **Leonardo Herkert** | Documentação Técnica | - |
+
+### Orientação e Apoio
+- **SETREM** - Sociedade Educacional Três de Maio
+- **LARCC** - Laboratory of Advanced Research on Cloud Computing
 
 ---
 
-| Área                     | Ferramentas                |
-| ------------------------ | -------------------------- |
-| Linguagem                | Python                     |
-| Processamento de vídeo   | OpenCV, FFmpeg             |
-| Estruturas de dados      | Buffer Circular            |
-| Interface                | Tkinter / PyQt (em estudo) |
-| Infraestrutura de testes | LARCC (SETREM)             |
+## 📜 Licença
+
+Este projeto está licenciado sob a **MIT License** para fins de aprendizado e pesquisa acadêmica.
+
+### ⚠️ Termos de Uso
+
+- ✅ Uso pessoal e educacional
+- ✅ Modificações e melhorias
+- ✅ Testes e experimentos
+- ❌ Uso comercial sem autorização
+- ❌ Captura automatizada em larga escala
 
 ---
 
-⭐ Agradecimentos
+## 🤝 Como Contribuir
 
-Este projeto conta com o apoio da SETREM (Sociedade Educacional Três de Maio) e do LARCC (Laboratory of Advanced Research on Cloud Computing), que oferecem infraestrutura e suporte técnico ao desenvolvimento do protótipo.
+Contribuições são bem-vindas! Para contribuir:
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
+4. Push para a branch (`git push origin feature/MinhaFeature`)
+5. Abra um Pull Request
+
+### 📝 Guidelines de Contribuição
+
+- Siga os padrões de código existentes
+- Adicione testes para novas funcionalidades
+- Atualize a documentação quando necessário
+- Escreva mensagens de commit descritivas
 
 ---
 
-📍 Três de Maio, RS — 2025
-🎓 Projeto Interdisciplinar de Extensão II — Engenharia de Computação, SETREM
+## 🐛 Reportar Bugs
+
+Encontrou um bug? Por favor, abra uma [issue](https://github.com/Azeved0K/lance-certo/issues) com:
+
+- Descrição clara do problema
+- Passos para reproduzir
+- Comportamento esperado vs atual
+- Screenshots (se aplicável)
+- Informações do ambiente (SO, navegador, versões)
+
+---
+
+## 🔗 Links Úteis
+
+- 📘 [Documentação Django](https://docs.djangoproject.com/)
+- ⚛️ [Documentação React](https://react.dev/)
+- 🎨 [Design System](https://www.figma.com/...)
+- 📊 [Roadmap do Projeto](https://github.com/...)
+
+---
+
+## 📞 Contato
+
+- **Instituição**: SETREM - Três de Maio, RS
+- **Projeto**: Interdisciplinar de Extensão II
+- **Curso**: Engenharia de Computação
+- **Ano**: 2025
+
+---
+
+## 🙏 Agradecimentos
+
+Este projeto conta com o apoio de:
+
+- **SETREM** - Pela estrutura e suporte institucional
+- **LARCC** - Pelo acesso à infraestrutura de testes
+- **Professores Orientadores** - Pelo conhecimento compartilhado
+- **Atletas Testadores** - Pelo feedback valioso
+
+---
+
+<div align="center">
+
+**[⬆ Voltar ao Topo](#-lance-certo--plataforma-inteligente-de-captura-e-compartilhamento-de-momentos-esportivos)**
+
+---
+
+Desenvolvido com ❤️ pelos alunos de Engenharia de Computação da SETREM
+
+📍 Três de Maio, Rio Grande do Sul, Brasil | 🎓 2025
+
+</div>
