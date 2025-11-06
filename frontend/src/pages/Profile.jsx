@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/layout/Header';
 import MomentoCard from '../components/gallery/MomentoCard';
+import EditProfileModal from '../components/profile/EditProfileModal';
 import { momentosService } from '../services/api';
+import api from '../services/api';
 import '../styles/pages/Profile.css';
 
 const Profile = () => {
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
+    const { user, logout, checkAuth } = useAuth();
     const [momentos, setMomentos] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [stats, setStats] = useState({
         totalMomentos: 0,
         totalViews: 0,
@@ -26,8 +29,13 @@ const Profile = () => {
     const fetchUserMomentos = async () => {
         try {
             setLoading(true);
-            const response = await momentosService.listar({ usuario: user.username });
-            const data = response.data || [];
+            const response = await momentosService.listar({
+                usuario: user.username,
+                page_size: 100 // ✅ Pegar até 100 vídeos (ajuste conforme necessário)
+            });
+
+            // ✅ CORREÇÃO CRÍTICA: Dados agora vêm dentro de 'results' (paginação)
+            const data = response.data?.results || response.data || [];
             setMomentos(Array.isArray(data) ? data : []);
 
             // Calcular estatísticas
@@ -39,8 +47,14 @@ const Profile = () => {
                 totalViews,
                 totalLikes
             });
+
+            console.log('✅ Momentos carregados no perfil:', {
+                total: data.length,
+                views: totalViews,
+                likes: totalLikes
+            });
         } catch (error) {
-            console.error('Erro ao carregar momentos do usuário:', error);
+            console.error('❌ Erro ao carregar momentos do usuário:', error);
         } finally {
             setLoading(false);
         }
@@ -52,6 +66,22 @@ const Profile = () => {
             ...prev,
             totalMomentos: prev.totalMomentos - 1
         }));
+    };
+
+    const handleSaveProfile = async (formData) => {
+        try {
+            await api.patch('/auth/user/', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            await checkAuth();
+            alert('✅ Perfil atualizado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao atualizar perfil:', error);
+            throw error;
+        }
     };
 
     if (!user) {
@@ -86,7 +116,10 @@ const Profile = () => {
                             </div>
                         </div>
 
-                        <button className="btn-edit-profile" onClick={() => alert('Funcionalidade de edição em desenvolvimento!')}>
+                        <button
+                            className="btn-edit-profile"
+                            onClick={() => setShowEditModal(true)}
+                        >
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -183,15 +216,21 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
+
+            <EditProfileModal
+                user={user}
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                onSave={handleSaveProfile}
+            />
         </>
     );
 };
 
-// Função auxiliar para formatar duração
 function formatDuration(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-export default Profile; 
+export default Profile;

@@ -1,4 +1,6 @@
-// src/App.jsx
+// frontend/src/App.jsx
+// ✅ ATUALIZADO: Adicionar rota /video/:id
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
@@ -6,6 +8,7 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Capture from './pages/Capture';
 import Profile from './pages/Profile';
+import VideoPlayer from './pages/VideoPlayer'; // ✅ NOVO
 
 // Componente interno que usa o contexto
 function AppRoutes() {
@@ -35,6 +38,12 @@ function AppRoutes() {
       <Route
         path="/profile"
         element={user ? <Profile /> : <Navigate to="/login" />}
+      />
+
+      {/* ✅ NOVA ROTA: Player de Vídeo */}
+      <Route
+        path="/video/:id"
+        element={<VideoPlayer />}
       />
 
       {/* Rota 404 */}

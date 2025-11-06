@@ -1,19 +1,18 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ NOVO
 import { useAuth } from '../../contexts/AuthContext';
 import { momentosService } from '../../services/api';
 import '../../styles/components/MomentoCard.css';
 
 const MomentoCard = ({ momento, onLike, onDelete }) => {
+    const navigate = useNavigate(); // ✅ NOVO
     const { user } = useAuth();
     const [liked, setLiked] = useState(momento.is_liked || false);
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [showVideoModal, setShowVideoModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [viewIncremented, setViewIncremented] = useState(false); // ✅ NOVO: Controle de view única
-    const videoRef = useRef(null); // ✅ NOVO: Referência ao vídeo
 
     const [editForm, setEditForm] = useState({
         titulo: momento.titulo || '',
@@ -120,40 +119,22 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
         }
     };
 
-    // ✅ NOVO: Incrementar view ao abrir modal
+    // ✅ NOVO: Navegar para página de vídeo
     const handleOpenVideo = async (e) => {
-        if (e.target.closest('.actionBtn') || e.target.closest('.menuBtn') || e.target.closest('.cardDropdown') || e.target.closest('button')) {
+        // Prevenir navegação se clicar em botões/ações
+        if (e.target.closest('.actionBtn') ||
+            e.target.closest('.menuBtn') ||
+            e.target.closest('.cardDropdown') ||
+            e.target.closest('button')) {
             return;
         }
+
         const videoUrl = getVideoUrl();
         if (videoUrl) {
-            setShowVideoModal(true);
-
-            // Incrementar view apenas uma vez por sessão
-            if (!viewIncremented) {
-                try {
-                    await momentosService.incrementarView(momento.id);
-                    setViewIncremented(true);
-                    console.log('✅ View incrementada para o momento:', momento.id);
-                } catch (error) {
-                    console.error('Erro ao incrementar view:', error);
-                }
-            }
+            // Navegar para a página de vídeo
+            navigate(`/video/${momento.id}`);
         } else {
             alert('Vídeo não disponível');
-        }
-    };
-
-    // ✅ NOVO: Incrementar view ao reproduzir vídeo
-    const handleVideoPlay = async () => {
-        if (!viewIncremented) {
-            try {
-                await momentosService.incrementarView(momento.id);
-                setViewIncremented(true);
-                console.log('✅ View incrementada ao reproduzir vídeo:', momento.id);
-            } catch (error) {
-                console.error('Erro ao incrementar view:', error);
-            }
         }
     };
 
@@ -248,10 +229,9 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                             </button>
                             <button className="actionBtn" title="Baixar Vídeo" onClick={handleDownload}>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <circle cx="18" cy="5" r="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <circle cx="6" cy="12" r="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <circle cx="18" cy="19" r="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <polyline points="7 10 12 15 17 10" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <line x1="12" y1="15" x2="12" y2="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </button>
                         </div>
@@ -309,38 +289,6 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de Vídeo */}
-            {showVideoModal && (
-                <div className="videoModal" onClick={() => setShowVideoModal(false)}>
-                    <div className="videoModalContent" onClick={(e) => e.stopPropagation()}>
-                        <button className="videoModalClose" onClick={() => setShowVideoModal(false)} title="Fechar">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" strokeLinecap="round" />
-                                <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                        </button>
-                        <video
-                            ref={videoRef}
-                            src={getVideoUrl()}
-                            controls
-                            autoPlay
-                            className="videoPlayer"
-                            onPlay={handleVideoPlay}
-                            onError={(e) => { console.error('Erro ao carregar vídeo:', e); alert('Erro ao carregar o vídeo'); }}
-                        />
-                        <div className="videoModalInfo">
-                            <h3>{momento.titulo}</h3>
-                            {momento.descricao && <p>{momento.descricao}</p>}
-                            <div className="videoModalStats">
-                                <span>👁️ {formatViews(momento.views)} visualizações</span>
-                                <span>❤️ {momento.likes || momento.total_likes || 0} curtidas</span>
-                                <span>📅 {formatDate(momento.data || momento.created_at)}</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             )}
