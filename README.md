@@ -379,8 +379,8 @@ O projeto segue uma abordagem experimental de pesquisa aplicada:
 |------|---------|--------|
 | Planejamento e Revisão Teórica | Jan-Abr/2025 | ✅ Concluído |
 | Desenvolvimento do Protótipo | Mai-Out/2025 | 🚧 Em progresso |
-| Testes e Validação | Nov-Dez/2025 | ⏳ A iniciar |
-| Integração com LARCC | 2026 | 🔜 Planejado |
+| Testes e Validação | Nov-Dez/2025 | 🚧 Em progresso |
+| Integração com LARCC | Nov-Dez/2025 | ⏳ A iniciar |
 
 ---
 
@@ -439,9 +439,9 @@ Acesse: [`/docs/Projeto_Interdisciplinar_II.pdf`](./docs/Projeto_Interdisciplina
 
 | Nome | Função | Contato |
 |------|--------|---------|
-| **Enzo Allebrand** | Desenvolvimento e Testes de Desempenho | - |
-| **Kauã Patricki** | Desenvolvimento e Testes de Desempenho | - |
-| **Leonardo Herkert** | Documentação Técnica | - |
+| **Enzo Allebrand** | Desenvolvimento e Testes de Desempenho | @Azeved0K |
+| **Kauã Patricki** | Desenvolvimento e Testes de Desempenho | @enzzoalle |
+| **Leonardo Herkert** | Documentação Técnica | @TooDinho1 |
 
 ### Orientação e Apoio
 - **SETREM** - Sociedade Educacional Três de Maio
