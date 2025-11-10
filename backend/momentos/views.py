@@ -161,12 +161,12 @@ class MomentoIncrementViewView(APIView):
                 status=status.HTTP_200_OK
             )
 
-        # ✅ Lógica de notificação de views
+        # Lógica de notificação de views
         views_antes = momento.views
         momento.incrementar_views()
         views_depois = momento.views
 
-        # ✅ GATILHO: Criar notificação ao atingir 15 views
+        # Criar notificação ao atingir 15 views
         if views_depois == 15 and views_antes < 15:
             try:
                 Notificacao.objects.create(
@@ -202,7 +202,7 @@ class MomentoLikeView(APIView):
         )
 
         if created:
-            # ✅ GATILHO: Criar notificação de like (se não for o próprio dono)
+            # Criar notificação de like (se não for o próprio dono)
             if momento.usuario != request.user:
                 try:
                     Notificacao.objects.create(

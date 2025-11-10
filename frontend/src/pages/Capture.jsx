@@ -4,6 +4,69 @@ import Header from '../components/layout/Header';
 import { momentosService } from '../services/api';
 import '../styles/pages/Capture.css';
 
+/**
+ * Gera um thumbnail a partir de um blob de vídeo.
+ * @param {Blob} videoBlob O blob do clipe de vídeo.
+ * @returns {Promise<File|null>} Um arquivo de imagem (thumbnail) ou null se falhar.
+ */
+const generateThumbnail = (videoBlob) => {
+    return new Promise((resolve, reject) => {
+        try {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+            video.src = URL.createObjectURL(videoBlob);
+            video.muted = true;
+            video.playsInline = true;
+
+            video.onloadeddata = () => {
+                // Tenta buscar o frame 0.1s para garantir que carregou
+                video.currentTime = 0.1;
+            };
+
+            video.onseeked = () => {
+                // Criar canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+
+                // Desenhar o frame no canvas
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // Converter canvas para blob
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const thumbnailFile = new File(
+                            [blob],
+                            `thumbnail-${Date.now()}.jpg`,
+                            { type: 'image/jpeg' }
+                        );
+                        URL.revokeObjectURL(video.src); // Limpar memória
+                        resolve(thumbnailFile);
+                    } else {
+                        reject(new Error('Falha ao criar blob do canvas'));
+                    }
+                }, 'image/jpeg', 0.8); // 80% de qualidade
+            };
+
+            video.onerror = (e) => {
+                console.error('Erro ao carregar vídeo para thumbnail:', e);
+                URL.revokeObjectURL(video.src);
+                reject(new Error('Erro ao carregar vídeo'));
+            };
+
+            video.play().catch(e => {
+                // Play é necessário em alguns browsers para buscar frames
+            });
+
+        } catch (error) {
+            console.error('Erro ao gerar thumbnail:', error);
+            reject(error);
+        }
+    });
+};
+
+
 const Capture = ({ user, onLogout }) => {
     const navigate = useNavigate();
     const videoRef = useRef(null);
@@ -25,6 +88,7 @@ const Capture = ({ user, onLogout }) => {
         descricao: '',
         tags: ''
     });
+    const [isUploading, setIsUploading] = useState(false);
 
     const BUFFER_DURATION = 60000; // 60 segundos
     const CHUNK_DURATION = 1000; // 1 segundo por chunk
@@ -151,7 +215,7 @@ const Capture = ({ user, onLogout }) => {
         };
 
         setClips(prev => [...prev, newClip]);
-        
+
         // Feedback visual
         const btn = document.querySelector('.btn-save-clip');
         if (btn) {
@@ -215,40 +279,59 @@ const Capture = ({ user, onLogout }) => {
 
         // Pegar primeiro clipe selecionado para publicar
         const clipToPublish = clips.find(c => c.id === selectedClips[0]);
-        
+
         if (clipToPublish) {
             setCurrentClipData(clipToPublish);
             setShowUploadModal(true);
         }
     };
 
-    // Upload do clipe
+    // Upload do clipe (COM GERAÇÃO DE THUMBNAIL)
     const handleUpload = async (e) => {
         e.preventDefault();
+        if (isUploading) return; // Prevenir duplo clique
 
         if (!currentClipData?.blob) {
             alert('Nenhum clipe para enviar');
             return;
         }
 
+        setIsUploading(true); // Ativa loading
+
         try {
             const formData = new FormData();
 
+            // 1. Criar arquivo de vídeo
             const videoFile = new File(
                 [currentClipData.blob],
                 `momento-${Date.now()}.webm`,
                 { type: currentClipData.blob.type }
             );
+
+            // 2. Gerar thumbnail
+            console.log('Gerando thumbnail...');
+            const thumbnailFile = await generateThumbnail(currentClipData.blob);
+
+            // 3. Adicionar tudo ao FormData
             formData.append('video', videoFile);
+            if (thumbnailFile) {
+                formData.append('thumbnail', thumbnailFile);
+                console.log('Thumbnail gerada e adicionada!', thumbnailFile);
+            } else {
+                console.warn('Não foi possível gerar a thumbnail.');
+            }
+
             formData.append('titulo', uploadData.titulo);
             formData.append('descricao', uploadData.descricao);
             formData.append('duracao', currentClipData.durationSeconds);
 
             if (uploadData.tags) {
                 const tagsArray = uploadData.tags.split(',').map(t => t.trim());
+                // Backend espera 'tags' como um JSON array string
                 formData.append('tags', JSON.stringify(tagsArray));
             }
 
+            console.log('Enviando momento para a API...');
             await momentosService.criar(formData);
 
             alert('✅ Momento publicado com sucesso!');
@@ -270,6 +353,8 @@ const Capture = ({ user, onLogout }) => {
         } catch (error) {
             console.error('Erro ao enviar:', error);
             alert('❌ Erro ao publicar momento: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setIsUploading(false); // Desativa loading
         }
     };
 
@@ -461,11 +546,11 @@ const Capture = ({ user, onLogout }) => {
 
             {/* Modal Upload */}
             {showUploadModal && (
-                <div className="modal" onClick={() => setShowUploadModal(false)}>
+                <div className="modal" onClick={() => !isUploading && setShowUploadModal(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2 className="modal-title">Publicar Clipe</h2>
-                            <button onClick={() => setShowUploadModal(false)} className="modal-close">×</button>
+                            <button onClick={() => setShowUploadModal(false)} className="modal-close" disabled={isUploading}>×</button>
                         </div>
 
                         <form onSubmit={handleUpload} className="modal-form">
@@ -478,6 +563,7 @@ const Capture = ({ user, onLogout }) => {
                                     value={uploadData.titulo}
                                     onChange={(e) => setUploadData({ ...uploadData, titulo: e.target.value })}
                                     className="input-field"
+                                    disabled={isUploading}
                                 />
                             </div>
 
@@ -489,6 +575,7 @@ const Capture = ({ user, onLogout }) => {
                                     value={uploadData.descricao}
                                     onChange={(e) => setUploadData({ ...uploadData, descricao: e.target.value })}
                                     className="input-field"
+                                    disabled={isUploading}
                                 />
                             </div>
 
@@ -500,15 +587,25 @@ const Capture = ({ user, onLogout }) => {
                                     value={uploadData.tags}
                                     onChange={(e) => setUploadData({ ...uploadData, tags: e.target.value })}
                                     className="input-field"
+                                    disabled={isUploading}
                                 />
                             </div>
 
                             <div className="modal-actions">
-                                <button type="button" onClick={() => setShowUploadModal(false)} className="btn btn-outline">
+                                <button type="button" onClick={() => setShowUploadModal(false)} className="btn btn-outline" disabled={isUploading}>
                                     Cancelar
                                 </button>
-                                <button type="submit" className="btn btn-primary">
-                                    Publicar
+                                <button type="submit" className="btn btn-primary" disabled={isUploading}>
+                                    {isUploading ? (
+                                        <>
+                                            <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <circle cx="12" cy="12" r="10" strokeWidth="3" fill="none" />
+                                            </svg>
+                                            Publicando...
+                                        </>
+                                    ) : (
+                                        'Publicar'
+                                    )}
                                 </button>
                             </div>
                         </form>

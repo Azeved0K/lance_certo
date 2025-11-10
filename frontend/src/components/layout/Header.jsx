@@ -10,8 +10,6 @@ const Header = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
-
-    // --- LÓGICA DE NOTIFICAÇÃO ---
     const [notifications, setNotifications] = useState([]);
     const [showNotifications, setShowNotifications] = useState(false);
     // Ref para o botão e o dropdown para detectar cliques fora
@@ -79,8 +77,6 @@ const Header = () => {
 
     // Calcular contagem de não lidas
     const unreadCount = notifications.filter(n => !n.lida).length;
-    // --- FIM DA LÓGICA DE NOTIFICAÇÃO ---
-
 
     const handleLogout = async () => {
         await logout();
@@ -143,7 +139,7 @@ const Header = () => {
                                     <span>Capturar</span>
                                 </Link>
 
-                                {/* BOTÃO DE NOTIFICAÇÃO ATUALIZADO */}
+                                {/* BOTÃO DE NOTIFICAÇÃO */}
                                 <div
                                     className="notificationBtnContainer"
                                     ref={notificationBtnRef}

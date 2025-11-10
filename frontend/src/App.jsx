@@ -1,6 +1,3 @@
-// frontend/src/App.jsx
-// ✅ ATUALIZADO: Adicionar rota /video/:id E /notificacoes
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
@@ -41,13 +38,13 @@ function AppRoutes() {
         element={user ? <Profile /> : <Navigate to="/login" />}
       />
 
-      {/* ✅ NOVA ROTA: Notificações */}
+      {/* Notificações */}
       <Route
         path="/notificacoes"
         element={user ? <NotificationsPage /> : <Navigate to="/login" />}
       />
 
-      {/* ✅ NOVA ROTA: Player de Vídeo */}
+      {/* Player de Vídeo */}
       <Route
         path="/video/:id"
         element={<VideoPlayer />}
