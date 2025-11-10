@@ -1,12 +1,86 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { notificacoesService } from '../../services/api';
+import NotificationDropdown from './NotificationDropdown';
 import '../../styles/components/Header.css';
+import '../../styles/components/NotificationDropdown.css';
 
 const Header = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
+
+    // --- LÓGICA DE NOTIFICAÇÃO ---
+    const [notifications, setNotifications] = useState([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+    // Ref para o botão e o dropdown para detectar cliques fora
+    const notificationBtnRef = useRef(null);
+
+    // Buscar notificações quando o usuário logar
+    useEffect(() => {
+        if (user) {
+            fetchNotifications();
+            // Buscar atualizações a cada 1 minuto
+            const interval = setInterval(fetchNotifications, 60000);
+            return () => clearInterval(interval);
+        } else {
+            // Limpar notificações se deslogar
+            setNotifications([]);
+            setShowNotifications(false);
+        }
+    }, [user]);
+
+    // Fechar dropdown se clicar fora
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (notificationBtnRef.current &&
+                !notificationBtnRef.current.contains(event.target)) {
+                // Verifica se o clique foi fora do dropdown também
+                if (event.target.closest('.notification-dropdown') === null) {
+                    setShowNotifications(false);
+                }
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [notificationBtnRef]);
+
+    // Busca as notificações da API
+    const fetchNotifications = async () => {
+        try {
+            const response = await notificacoesService.listar();
+            setNotifications(response.data || []);
+        } catch (error) {
+            console.error('Erro ao buscar notificações:', error);
+        }
+    };
+
+    // Lógica ao clicar no sino
+    const handleNotificationClick = async () => {
+        const newShowState = !showNotifications;
+        setShowNotifications(newShowState);
+
+        // Se estiver abrindo o dropdown e houver notificações não lidas
+        if (newShowState && unreadCount > 0) {
+            try {
+                // Marcar como lidas no backend
+                await notificacoesService.marcarTodasLidas();
+
+                // Atualizar estado local para refletir (remove o ponto azul)
+                setNotifications(prev =>
+                    prev.map(n => ({ ...n, lida: true }))
+                );
+            } catch (error) {
+                console.error('Erro ao marcar notificações como lidas:', error);
+            }
+        }
+    };
+
+    // Calcular contagem de não lidas
+    const unreadCount = notifications.filter(n => !n.lida).length;
+    // --- FIM DA LÓGICA DE NOTIFICAÇÃO ---
+
 
     const handleLogout = async () => {
         await logout();
@@ -69,13 +143,36 @@ const Header = () => {
                                     <span>Capturar</span>
                                 </Link>
 
-                                <button className="notificationBtn" title="Notificacoes">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M13.73 21a2 2 0 0 1-3.46 0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    <span className="badge">3</span>
-                                </button>
+                                {/* BOTÃO DE NOTIFICAÇÃO ATUALIZADO */}
+                                <div
+                                    className="notificationBtnContainer"
+                                    ref={notificationBtnRef}
+                                    style={{ position: 'relative' }} // Container para o dropdown
+                                >
+                                    <button
+                                        className="notificationBtn"
+                                        title="Notificações"
+                                        onClick={handleNotificationClick} // Adiciona onClick
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M13.73 21a2 2 0 0 1-3.46 0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+
+                                        {/* Mostra badge apenas se houver não lidas */}
+                                        {unreadCount > 0 && (
+                                            <span className="badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                                        )}
+                                    </button>
+
+                                    {/* Renderiza o Dropdown */}
+                                    {showNotifications && (
+                                        <NotificationDropdown
+                                            notifications={notifications}
+                                            onClose={() => setShowNotifications(false)}
+                                        />
+                                    )}
+                                </div>
 
                                 <div className="userMenu">
                                     <button className="userBtn">

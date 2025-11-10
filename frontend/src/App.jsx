@@ -1,5 +1,5 @@
 // frontend/src/App.jsx
-// ✅ ATUALIZADO: Adicionar rota /video/:id
+// ✅ ATUALIZADO: Adicionar rota /video/:id E /notificacoes
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -8,7 +8,8 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Capture from './pages/Capture';
 import Profile from './pages/Profile';
-import VideoPlayer from './pages/VideoPlayer'; // ✅ NOVO
+import VideoPlayer from './pages/VideoPlayer';
+import NotificationsPage from './pages/Notifications.jsx';
 
 // Componente interno que usa o contexto
 function AppRoutes() {
@@ -38,6 +39,12 @@ function AppRoutes() {
       <Route
         path="/profile"
         element={user ? <Profile /> : <Navigate to="/login" />}
+      />
+
+      {/* ✅ NOVA ROTA: Notificações */}
+      <Route
+        path="/notificacoes"
+        element={user ? <NotificationsPage /> : <Navigate to="/login" />}
       />
 
       {/* ✅ NOVA ROTA: Player de Vídeo */}
@@ -73,7 +80,7 @@ function AppRoutes() {
                 color: 'var(--gray-600)',
                 marginBottom: '1.5rem'
               }}>
-                Pagina nao encontrada
+                Pagina não encontrada
               </p>
               <a
                 href="/"
@@ -87,7 +94,7 @@ function AppRoutes() {
                   textDecoration: 'none'
                 }}
               >
-                Voltar ao Inicio
+                Voltar ao Início
               </a>
             </div>
           </div>

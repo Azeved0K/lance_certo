@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Momento, Tag, Like, Comentario
+from .models import Momento, Tag, Like, Comentario, Notificacao
 from usuarios.serializers import UsuarioSerializer
 
 class TagSerializer(serializers.ModelSerializer):
@@ -19,10 +19,10 @@ class ComentarioSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'usuario', 'created_at', 'updated_at']
 
 class MomentoListSerializer(serializers.ModelSerializer):
-    """Serializer para listagem de momentos (mais leve)"""
+    """Serializer para listagem de momentos"""
     usuario = UsuarioSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
-    total_likes = serializers.SerializerMethodField()  # ✅ Mudança aqui
+    total_likes = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     video = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
@@ -46,7 +46,6 @@ class MomentoListSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'views', 'created_at']
     
     def get_total_likes(self, obj):
-        """✅ NOVO: Pega do campo anotado OU da property"""
         # Se a view anotou 'likes_count', usa esse valor
         if hasattr(obj, 'likes_count'):
             return obj.likes_count
@@ -75,10 +74,10 @@ class MomentoListSerializer(serializers.ModelSerializer):
         return None
 
 class MomentoDetailSerializer(serializers.ModelSerializer):
-    """Serializer para detalhes do momento (mais completo)"""
+    """Serializer para detalhes do momento"""
     usuario = UsuarioSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
-    total_likes = serializers.SerializerMethodField()  # ✅ Mudança aqui
+    total_likes = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     comentarios = ComentarioSerializer(many=True, read_only=True)
     video = serializers.SerializerMethodField()
@@ -105,7 +104,7 @@ class MomentoDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'usuario', 'views', 'created_at', 'updated_at']
     
     def get_total_likes(self, obj):
-        """✅ NOVO: Pega do campo anotado OU da property"""
+        """Pega do campo anotado OU da property"""
         if hasattr(obj, 'likes_count'):
             return obj.likes_count
         return obj.likes.count()
@@ -191,3 +190,22 @@ class MomentoUpdateSerializer(serializers.ModelSerializer):
                     instance.tags.add(tag)
         
         return instance
+
+class NotificacaoSerializer(serializers.ModelSerializer):
+    """Serializer para Notificações"""
+    usuario_origem = UsuarioSerializer(read_only=True)
+    # Envia apenas o ID do momento para facilitar navegação no frontend
+    momento_id = serializers.ReadOnlyField(source='momento.id')
+
+    class Meta:
+        model = Notificacao
+        fields = [
+            'id',
+            'usuario_origem',
+            'momento_id',
+            'tipo',
+            'mensagem',
+            'lida',
+            'created_at'
+        ]
+        read_only_fields = fields

@@ -1,6 +1,3 @@
-// frontend/src/services/api.js
-// ✅ ATUALIZADO: Adicionar método getSuggestions
-
 import axios from 'axios';
 
 const api = axios.create({
@@ -56,7 +53,13 @@ export const momentosService = {
     like: (id) => api.post(`/momentos/${id}/like/`),
     unlike: (id) => api.delete(`/momentos/${id}/like/`),
     incrementarView: (id) => api.post(`/momentos/${id}/view/`),
-    getSuggestions: (id) => api.get(`/momentos/${id}/suggestions/`), // ✅ NOVO
+    getSuggestions: (id) => api.get(`/momentos/${id}/suggestions/`),
+};
+
+// Função de Notificações
+export const notificacoesService = {
+    listar: () => api.get('/momentos/notificacoes/'),
+    marcarTodasLidas: () => api.post('/momentos/notificacoes/marcar-lidas/'),
 };
 
 export default api;

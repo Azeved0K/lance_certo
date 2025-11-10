@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Momento, Tag, Like, Comentario
+from .models import Momento, Tag, Like, Comentario, Notificacao
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
@@ -62,3 +62,15 @@ class ComentarioAdmin(admin.ModelAdmin):
     def texto_resumido(self, obj):
         return obj.texto[:50] + '...' if len(obj.texto) > 50 else obj.texto
     texto_resumido.short_description = 'Texto'
+
+@admin.register(Notificacao)
+class NotificacaoAdmin(admin.ModelAdmin):
+    list_display = ['usuario_destino', 'tipo', 'mensagem_resumida', 'lida', 'created_at']
+    list_filter = ['tipo', 'lida', 'created_at']
+    search_fields = ['usuario_destino__username', 'mensagem']
+    readonly_fields = ['created_at']
+
+    def mensagem_resumida(self, obj):
+        return obj.mensagem[:75] + '...' if len(obj.mensagem) > 75 else obj.mensagem
+
+    mensagem_resumida.short_description = 'Mensagem'

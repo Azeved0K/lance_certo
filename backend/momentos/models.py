@@ -95,3 +95,43 @@ class Comentario(models.Model):
     
     def __str__(self):
         return f'{self.usuario.username} comentou em {self.momento.titulo}'
+
+class Notificacao(models.Model):
+    TIPO_CHOICES = (
+        ('like', 'Like'),
+        ('view_milestone', 'Marco de Visualizações'),
+        ('comentario', 'Comentário'),  # Já preparando para o futuro
+    )
+
+    usuario_destino = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notificacoes',
+        verbose_name='Usuário de Destino (Dono)'
+    )
+    usuario_origem = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notificacoes_criadas',
+        null=True, blank=True,  # Nem toda notificação tem origem (ex: views)
+        verbose_name='Usuário de Origem (Ação)'
+    )
+    momento = models.ForeignKey(
+        Momento,
+        on_delete=models.CASCADE,
+        related_name='notificacoes',
+        null=True, blank=True,
+        verbose_name='Momento relacionado'
+    )
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name='Tipo')
+    mensagem = models.TextField(max_length=500, verbose_name='Mensagem')
+    lida = models.BooleanField(default=False, verbose_name='Lida')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
+
+    class Meta:
+        verbose_name = 'Notificação'
+        verbose_name_plural = 'Notificações'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Notificação para {self.usuario_destino.username}: {self.tipo}'

@@ -2,28 +2,27 @@ from rest_framework import status, generics, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework.pagination import PageNumberPagination  # ✅ NOVO
+from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Count
-from django.db import models
-import logging
-
-from .models import Momento, Tag, Like, Comentario
+from .models import Momento, Tag, Like, Comentario, Notificacao
 from .serializers import (
     MomentoListSerializer,
     MomentoDetailSerializer,
     MomentoCreateSerializer,
     MomentoUpdateSerializer,
     TagSerializer,
-    ComentarioSerializer
+    ComentarioSerializer,
+    NotificacaoSerializer
 )
+import logging
 
-# ✅ Logger para debug
+# Logger para debug
 logger = logging.getLogger(__name__)
 
-# ✅ NOVO: Classe de Paginação Customizada
+# Classe de Paginação Customizada
 class MomentoPagination(PageNumberPagination):
-    page_size = 9  # ✅ 9 momentos por página (3x3 grid)
+    page_size = 9  # 9 momentos por página (3x3 grid)
     page_size_query_param = 'page_size'  # Permite customizar: ?page_size=12
     max_page_size = 24  # Máximo de 24 por página
 
@@ -36,10 +35,10 @@ class MomentoListCreateView(generics.ListCreateAPIView):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['titulo', 'descricao', 'tags__nome']
     ordering_fields = ['created_at', 'views']
-    pagination_class = MomentoPagination  # ✅ NOVO: Ativa paginação
+    pagination_class = MomentoPagination  # Ativa paginação
     
     def get_queryset(self):
-        # ✅ Busca base com prefetch para otimização
+        # Busca base com prefetch para otimização
         queryset = Momento.objects.select_related('usuario').prefetch_related('tags')
         
         # Filtrar por tag
@@ -64,18 +63,16 @@ class MomentoListCreateView(generics.ListCreateAPIView):
             ).distinct()
             logger.info(f"🔍 Busca por texto: {search}")
         
-        # ✅ ORDENAÇÃO CORRIGIDA (INVERTIDA)
         sort_by = self.request.query_params.get('sort', 'recent')
         logger.info(f"📊 Ordenação solicitada: {sort_by}")
         
         if sort_by == 'trending':
-            # ✅ EM ALTA = Ordenar por visualizações (mais vistas primeiro)
+            # EM ALTA = Ordenar por visualizações
             queryset = queryset.order_by('-views', '-created_at')
             logger.info(f"🔥 Ordenando por views (trending/em alta)")
             
         elif sort_by == 'popular':
-            # ✅ POPULARES = Ordenar por curtidas (mais curtidas primeiro)
-            # ✅ CRÍTICO: Anotar com alias diferente da property do modelo
+            # POPULARES = Ordenar por curtidas (mais curtidas primeiro)
             queryset = queryset.annotate(
                 likes_count=Count('likes', distinct=True)
             ).order_by('-likes_count', '-views', '-created_at')
@@ -147,26 +144,43 @@ class MomentoDetailView(APIView):
             status=status.HTTP_204_NO_CONTENT
         )
 
+
 class MomentoIncrementViewView(APIView):
     """
     POST /api/momentos/{id}/view/ - Incrementa view do momento
     """
     permission_classes = [IsAuthenticatedOrReadOnly]
-    
+
     def post(self, request, pk):
         momento = get_object_or_404(Momento, pk=pk)
-        
+
         # Não incrementar se for o dono
         if request.user.is_authenticated and request.user == momento.usuario:
             return Response(
                 {'message': 'Donos não incrementam views próprias', 'views': momento.views},
                 status=status.HTTP_200_OK
             )
-        
-        # Incrementar view
+
+        # ✅ Lógica de notificação de views
+        views_antes = momento.views
         momento.incrementar_views()
+        views_depois = momento.views
+
+        # ✅ GATILHO: Criar notificação ao atingir 15 views
+        if views_depois == 15 and views_antes < 15:
+            try:
+                Notificacao.objects.create(
+                    usuario_destino=momento.usuario,
+                    momento=momento,
+                    tipo='view_milestone',
+                    mensagem=f'Seu momento "{momento.titulo}" atingiu 15 visualizações! 🚀'
+                )
+                logger.info(f"🎉 Notificação de 15 views criada para '{momento.titulo}'")
+            except Exception as e:
+                logger.error(f"Erro ao criar notificação de views: {e}")
+
         logger.info(f"👁️ View incrementada para '{momento.titulo}': {momento.views} views")
-        
+
         return Response(
             {'message': 'View incrementada', 'views': momento.views},
             status=status.HTTP_200_OK
@@ -178,17 +192,30 @@ class MomentoLikeView(APIView):
     DELETE /api/momentos/{id}/like/ - Descurtir momento
     """
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request, pk):
         momento = get_object_or_404(Momento, pk=pk)
-        
-        # Verifica se já curtiu
+
         like, created = Like.objects.get_or_create(
             usuario=request.user,
             momento=momento
         )
-        
+
         if created:
+            # ✅ GATILHO: Criar notificação de like (se não for o próprio dono)
+            if momento.usuario != request.user:
+                try:
+                    Notificacao.objects.create(
+                        usuario_destino=momento.usuario,
+                        usuario_origem=request.user,
+                        momento=momento,
+                        tipo='like',
+                        mensagem=f'{request.user.username} curtiu seu momento: "{momento.titulo}"'
+                    )
+                    logger.info(f"🎉 Notificação de like criada para '{momento.titulo}'")
+                except Exception as e:
+                    logger.error(f"Erro ao criar notificação de like: {e}")
+
             logger.info(f"❤️ {request.user.username} curtiu '{momento.titulo}': {momento.total_likes} likes")
             return Response(
                 {
@@ -274,3 +301,33 @@ class TagListView(generics.ListAPIView):
     queryset = Tag.objects.all().order_by('nome')
     serializer_class = TagSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+class NotificacaoListView(generics.ListAPIView):
+    """
+    GET /api/momentos/notificacoes/ - Lista notificações do usuário logado
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = NotificacaoSerializer
+
+    def get_queryset(self):
+        # Retorna apenas as 30 mais recentes
+        return Notificacao.objects.filter(
+            usuario_destino=self.request.user
+        ).order_by('-created_at')[:30]
+
+
+class NotificacaoMarcarLidasView(APIView):
+    """
+    POST /api/momentos/notificacoes/marcar-lidas/ - Marca todas como lidas
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        Notificacao.objects.filter(
+            usuario_destino=request.user,
+            lida=False
+        ).update(lida=True)
+        return Response(
+            {'message': 'Notificações marcadas como lidas'},
+            status=status.HTTP_200_OK
+        )
