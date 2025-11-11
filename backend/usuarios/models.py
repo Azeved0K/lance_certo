@@ -8,6 +8,7 @@ class Usuario(AbstractUser):
     data_nascimento = models.DateField(null=True, blank=True, verbose_name='Data de Nascimento')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
+    is_private = models.BooleanField(default=False, verbose_name='Perfil Privado')
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='usuario_set', # Nome único para os grupos

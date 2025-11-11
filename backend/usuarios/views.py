@@ -101,14 +101,34 @@ class CurrentUserView(APIView):
         return Response(serializer.data)
 
     def patch(self, request):
-        """Atualiza dados do usuário"""
+        """Atualiza dados do usuário com tratamento de booleano para FormData"""
+        
+        # Cria uma cópia mutável dos dados da requisição para manipulação segura
+        data_copy = request.data.copy()
+
+        # --- CORREÇÃO ROBUSTA DE PERSISTÊNCIA DE BOOLEANOS ---
+        if 'is_private' in data_copy:
+            is_private_value = data_copy['is_private']
+            
+            # Se for uma string (que é o caso do FormData), converte explicitamente
+            if isinstance(is_private_value, str):
+                is_private_str = is_private_value.lower()
+                
+                if is_private_str == 'true':
+                    data_copy['is_private'] = True
+                elif is_private_str == 'false':
+                    data_copy['is_private'] = False
+                # Para qualquer outra string, o serializer fará a validação
+        # --- FIM CORREÇÃO DE PERSISTÊNCIA DE BOOLEANOS ---
+
         serializer = UsuarioUpdateSerializer(
             request.user,
-            data=request.data,
+            data=data_copy, # Passa a cópia com o booleano corrigido
             partial=True
         )
         if serializer.is_valid():
             serializer.save()
+            # Retorna o usuário atualizado
             return Response(UsuarioSerializer(request.user, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -133,11 +153,26 @@ class PublicProfileView(APIView):
     def get(self, request, username):
         # 1. Buscar o usuário
         user = get_object_or_404(Usuario, username=username)
+        
+        # 1.5. LÓGICA DE PRIVACIDADE: Bloquear acesso se privado e não for o dono
+        is_owner = request.user.is_authenticated and request.user == user
+
+        if user.is_private and not is_owner:
+             return Response(
+                {'error': 'Este perfil é privado'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         user_serializer = UsuarioSerializer(user, context={'request': request})
 
         # 2. Buscar e paginar os momentos desse usuário
         pagination = MomentoPagination()
-        momentos_queryset = Momento.objects.filter(usuario=user).order_by('-created_at')
+        
+        # Se for privado, e não for o dono, não carrega momentos
+        if user.is_private and not is_owner:
+            momentos_queryset = Momento.objects.none()
+        else:
+            momentos_queryset = Momento.objects.filter(usuario=user).order_by('-created_at')
 
         # Paginar o queryset
         paginated_momentos = pagination.paginate_queryset(momentos_queryset, request)

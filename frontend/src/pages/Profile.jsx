@@ -53,7 +53,15 @@ const Profile = () => {
 
             } catch (error) {
                 console.error('Erro ao carregar perfil:', error);
-                navigate('/'); // Se o perfil não existe, volta para a home
+
+                // --- LÓGICA DE PRIVACIDADE NO FRONT-END ---
+                if (error.response && error.response.status === 403 && error.response.data.error && error.response.data.error.includes('privado')) {
+                    // Se o backend retornou 403 por ser privado, configuramos um estado de erro
+                    setProfile({ is_private_error: true, username: username });
+                } else {
+                    navigate('/'); // Se o perfil não existe ou outro erro, volta para a home
+                }
+                // --- FIM LÓGICA ---
             } finally {
                 setLoading(false);
             }
@@ -72,6 +80,7 @@ const Profile = () => {
 
     const handleSaveProfile = async (formData) => {
         try {
+            // A API patch é usada para atualizar o usuário
             await api.patch('/auth/user/', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
@@ -79,8 +88,7 @@ const Profile = () => {
             await checkAuth();
 
             // Recarrega os dados do perfil público (para o caso do username mudar, etc)
-            // Mas para este caso, apenas o checkAuth() já atualiza o 'user'
-            // O 'profile' pode ser atualizado manualmente se necessário
+            // O 'profile' é atualizado com o que foi enviado no form
             setProfile(prev => ({ ...prev, ...Object.fromEntries(formData.entries()) }));
 
             alert('✅ Perfil atualizado com sucesso!');
@@ -107,6 +115,41 @@ const Profile = () => {
         navigate('/login');
         return null;
     }
+
+    // --- RENDERIZAÇÃO DO PERFIL PRIVADO ---
+    if (!loading && profile && profile.is_private_error) {
+        return (
+            <>
+                <Header user={user} onLogout={logout} />
+                <div className="profile-container" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: 'calc(100vh - 64px)',
+                    background: 'var(--gray-50)',
+                    textAlign: 'center'
+                }}>
+                    <div className="container">
+                        <h1 className="profile-username" style={{ fontSize: '2.5rem', color: 'var(--danger-color)' }}>
+                            🔒 Perfil Privado
+                        </h1>
+                        <p className="profile-email" style={{ marginTop: '1rem', fontSize: '1.2rem', color: 'var(--gray-600)' }}>
+                            Você não tem permissão para visualizar o perfil de **@{profile.username}**.
+                        </p>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="btn btn-primary"
+                            style={{ marginTop: '2rem' }}
+                        >
+                            Voltar para o Início
+                        </button>
+                    </div>
+                </div>
+            </>
+        );
+    }
+    // --- FIM DA RENDERIZAÇÃO DE PERFIL PRIVADO ---
+
 
     return (
         <>
@@ -137,6 +180,12 @@ const Profile = () => {
                                         year: 'numeric'
                                     })}
                                 </p>
+                                {/* INDICADOR DE PRIVACIDADE PARA O DONO */}
+                                {isOwner && profile.is_private && (
+                                    <p style={{ marginTop: '0.5rem', color: 'var(--danger-color)', fontWeight: 600 }}>
+                                        🔒 Este perfil é privado.
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -159,8 +208,8 @@ const Profile = () => {
                     <div className="profile-stats">
                         <div className="stat-card">
                             <svg className="stat-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M23 7l-7 5 7 5V7z" fill="currentColor"/>
-                                <rect x="1" y="5" width="15" height="14" rx="2"/>
+                                <path d="M23 7l-7 5 7 5V7z" fill="currentColor" />
+                                <rect x="1" y="5" width="15" height="14" rx="2" />
                             </svg>
                             <div className="stat-content">
                                 <div className="stat-value">{stats.totalMomentos}</div>
@@ -170,8 +219,8 @@ const Profile = () => {
 
                         <div className="stat-card">
                             <svg className="stat-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                <circle cx="12" cy="12" r="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <circle cx="12" cy="12" r="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                             <div className="stat-content">
                                 <div className="stat-value">{stats.totalViews}</div>
@@ -181,7 +230,7 @@ const Profile = () => {
 
                         <div className="stat-card">
                             <svg className="stat-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                             <div className="stat-content">
                                 <div className="stat-value">{stats.totalLikes}</div>

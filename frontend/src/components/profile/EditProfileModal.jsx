@@ -1,3 +1,4 @@
+// content of frontend/src/components/profile/EditProfileModal.jsx
 import { useState, useRef } from 'react';
 import '../../styles/components/EditProfileModal.css';
 
@@ -7,6 +8,7 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
         last_name: user?.last_name || '',
         bio: user?.bio || '',
         data_nascimento: user?.data_nascimento || '',
+        is_private: user?.is_private || false, // <-- NOVO: Inicializa
         avatar: null
     });
     const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
@@ -15,8 +17,11 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
     const fileInputRef = useRef(null);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type, checked } = e.target; // <-- TRATA CHECKBOX
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
         setError('');
     };
 
@@ -79,6 +84,13 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
             if (formData.data_nascimento !== user?.data_nascimento) {
                 updateData.append('data_nascimento', formData.data_nascimento);
             }
+
+            // Adicionar campo de privacidade
+            if (formData.is_private !== user?.is_private) {
+                // Envia como string 'true' ou 'false' para ser interpretado pelo DRF
+                updateData.append('is_private', formData.is_private.toString());
+            }
+
 
             // Adicionar avatar se foi alterado
             if (formData.avatar instanceof File) {
@@ -242,8 +254,35 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
                         <p className="form-hint">Esta informação não será exibida publicamente</p>
                     </div>
 
+                    {/* Perfil Privado Toggle - NOVO BLOCO */}
+                    <div className="form-group" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderTop: '1px solid var(--gray-200)',
+                        paddingTop: '1.5rem',
+                        marginBottom: '0.5rem'
+                    }}>
+                        <div>
+                            <label className="form-label" style={{ marginBottom: '0' }}>Perfil Privado</label>
+                            <p className="form-hint" style={{ marginTop: '0.375rem' }}>Se ativado, outros usuários não verão seu perfil ou vídeos.</p>
+                        </div>
+                        <input
+                            type="checkbox"
+                            name="is_private"
+                            checked={formData.is_private}
+                            onChange={handleChange}
+                            style={{
+                                width: '20px',
+                                height: '20px',
+                                accentColor: 'var(--primary-color)'
+                            }}
+                            disabled={loading}
+                        />
+                    </div>
+
                     {/* Ações */}
-                    <div className="modal-actions">
+                    <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
                         <button
                             type="button"
                             className="btn btn-outline"

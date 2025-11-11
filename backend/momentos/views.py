@@ -41,6 +41,16 @@ class MomentoListCreateView(generics.ListCreateAPIView):
         # Busca base com prefetch para otimização
         queryset = Momento.objects.select_related('usuario').prefetch_related('tags')
 
+        # LÓGICA DE PRIVACIDADE: Excluir momentos cujo autor é privado, a menos que seja o usuário logado.
+        if self.request.user.is_authenticated:
+            # Se logado: mostra todos os públicos E os próprios vídeos (mesmo se privados)
+            queryset = queryset.filter(
+                Q(usuario__is_private=False) | Q(usuario=self.request.user)
+            ).distinct()
+        else:
+            # Se deslogado: mostra apenas os públicos
+            queryset = queryset.filter(usuario__is_private=False)
+
         # Filtrar por tag
         tag = self.request.query_params.get('tag', None)
         if tag:

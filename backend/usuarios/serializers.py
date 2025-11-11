@@ -22,7 +22,8 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'data_nascimento',
             'total_momentos',
             'total_likes_recebidos',
-            'created_at'
+            'created_at',
+            'is_private'
         ]
         read_only_fields = ['id', 'created_at']
 
@@ -42,7 +43,7 @@ class UsuarioCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name']
+        fields = ['first_name', 'last_name', 'avatar', 'bio', 'data_nascimento', 'is_private']
 
     def validate(self, data):
         """Validação customizada"""
@@ -66,7 +67,7 @@ class UsuarioUpdateSerializer(serializers.ModelSerializer):
     """Serializer para atualização de perfil"""
     class Meta:
         model = Usuario
-        fields = ['first_name', 'last_name', 'avatar', 'bio', 'data_nascimento']
+        fields = ['first_name', 'last_name', 'avatar', 'bio', 'data_nascimento', 'is_private']
 
 class LoginSerializer(serializers.Serializer):
     """Serializer para login"""
