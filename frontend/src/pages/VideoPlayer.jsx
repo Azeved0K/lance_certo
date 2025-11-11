@@ -40,8 +40,12 @@ const VideoPlayer = () => {
 
     const fetchSugestoes = async () => {
         try {
-            const response = await momentosService.getSuggestions(id);
-            setSugestoes(response.data || []);
+            // Ajuste: A API de sugestões não foi implementada no backend.
+            // Vamos buscar momentos recentes como sugestão, excluindo o atual.
+            const response = await momentosService.listar({sort: 'recent', page_size: 10});
+            const allMomentos = response.data?.results || [];
+            // Filtra o momento atual da lista de sugestões
+            setSugestoes(allMomentos.filter(m => m.id !== parseInt(id, 10)));
         } catch (error) {
             console.error('Erro ao buscar sugestões:', error);
         }
@@ -83,6 +87,7 @@ const VideoPlayer = () => {
     };
 
     const formatViews = (num) => {
+        if (!num) return '0';
         if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
         if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
         return num.toString();
@@ -100,7 +105,7 @@ const VideoPlayer = () => {
     if (loading) {
         return (
             <>
-                <Header />
+                <Header/>
                 <div className="video-player-loading">
                     <div className="loading-spinner"></div>
                 </div>
@@ -111,7 +116,7 @@ const VideoPlayer = () => {
     if (!momento) {
         return (
             <>
-                <Header />
+                <Header/>
                 <div className="video-player-error">
                     <h2>Vídeo não encontrado</h2>
                     <Link to="/" className="btn btn-primary">Voltar ao Início</Link>
@@ -122,7 +127,7 @@ const VideoPlayer = () => {
 
     return (
         <>
-            <Header />
+            <Header/>
 
             <div className="video-player-container">
                 <div className="container-fluid">
@@ -151,8 +156,8 @@ const VideoPlayer = () => {
                                     <div className="video-stats">
                                         <div className="stat-item">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" />
-                                                <circle cx="12" cy="12" r="3" strokeWidth="2" />
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2"/>
+                                                <circle cx="12" cy="12" r="3" strokeWidth="2"/>
                                             </svg>
                                             <span>{formatViews(momento.views)} visualizações</span>
                                         </div>
@@ -169,17 +174,17 @@ const VideoPlayer = () => {
                                             className={`action-btn ${liked ? 'liked' : ''}`}
                                         >
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor">
-                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" />
+                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2"/>
                                             </svg>
-                                            <span>{momento.total_likes}</span>
+                                            <span>{formatViews(momento.total_likes)}</span>
                                         </button>
 
                                         <button className="action-btn">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <circle cx="18" cy="5" r="3" strokeWidth="2" />
-                                                <circle cx="6" cy="12" r="3" strokeWidth="2" />
-                                                <circle cx="18" cy="19" r="3" strokeWidth="2" />
-                                                <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" strokeWidth="2" />
+                                                <circle cx="18" cy="5" r="3" strokeWidth="2"/>
+                                                <circle cx="6" cy="12" r="3" strokeWidth="2"/>
+                                                <circle cx="18" cy="19" r="3" strokeWidth="2"/>
+                                                <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" strokeWidth="2"/>
                                             </svg>
                                             <span>Compartilhar</span>
                                         </button>
@@ -188,19 +193,24 @@ const VideoPlayer = () => {
 
                                 {/* Informações do Uploader */}
                                 <div className="video-uploader">
-                                    <div className="uploader-info">
-                                        <img
-                                            src={momento.usuario?.avatar || `https://ui-avatars.com/api/?name=${momento.usuario?.username}&background=3B82F6&color=fff`}
-                                            alt={momento.usuario?.username}
-                                            className="uploader-avatar"
-                                        />
-                                        <div className="uploader-details">
-                                            <h3 className="uploader-name">{momento.usuario?.username}</h3>
-                                            <p className="uploader-stats">
-                                                {momento.usuario?.total_momentos} vídeos
-                                            </p>
+                                    <Link
+                                        to={`/profile/${momento.usuario?.username}`}
+                                        className="uploader-info-link"
+                                    >
+                                        <div className="uploader-info">
+                                            <img
+                                                src={momento.usuario?.avatar || `https://ui-avatars.com/api/?name=${momento.usuario?.username}&background=3B82F6&color=fff`}
+                                                alt={momento.usuario?.username}
+                                                className="uploader-avatar"
+                                            />
+                                            <div className="uploader-details">
+                                                <h3 className="uploader-name">{momento.usuario?.username}</h3>
+                                                <p className="uploader-stats">
+                                                    {momento.usuario?.total_momentos} vídeos
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 </div>
 
                                 {/* Descrição e Tags */}

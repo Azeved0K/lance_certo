@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/layout/Header';
 import MomentoCard from '../components/gallery/MomentoCard';
 import EditProfileModal from '../components/profile/EditProfileModal';
-import { momentosService } from '../services/api';
+import { momentosService, authService } from '../services/api';
 import api from '../services/api';
 import '../styles/pages/Profile.css';
 
 const Profile = () => {
     const navigate = useNavigate();
-    const { user, logout, checkAuth } = useAuth();
+    const {username} = useParams();
+    const {user, logout, checkAuth} = useAuth(); // 'user' é o usuário LOGADO
+    const [profile, setProfile] = useState(null); // Estado para o perfil VISITADO
     const [momentos, setMomentos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -20,45 +22,45 @@ const Profile = () => {
         totalLikes: 0
     });
 
+    // Verifica se o usuário logado é o dono deste perfil
+    const isOwner = user && profile && user.id === profile.id;
+
+    // Efeito para buscar dados do perfil (substitui o fetchUserMomentos)
     useEffect(() => {
-        if (user) {
-            fetchUserMomentos();
-        }
-    }, [user]);
-
-    const fetchUserMomentos = async () => {
-        try {
+        const fetchProfileData = async () => {
+            if (!username) return;
             setLoading(true);
-            const response = await momentosService.listar({
-                usuario: user.username,
-                page_size: 100 // ✅ Pegar até 100 vídeos (ajuste conforme necessário)
-            });
+            try {
+                // 1. Busca o usuário e seus momentos paginados
+                const response = await authService.getPublicProfile(username);
+                const data = response.data;
 
-            // ✅ CORREÇÃO CRÍTICA: Dados agora vêm dentro de 'results' (paginação)
-            const data = response.data?.results || response.data || [];
-            setMomentos(Array.isArray(data) ? data : []);
+                setProfile(data.user); // Dados do usuário (bio, avatar, etc.)
 
-            // Calcular estatísticas
-            const totalViews = data.reduce((sum, m) => sum + (m.views || 0), 0);
-            const totalLikes = data.reduce((sum, m) => sum + (m.total_likes || 0), 0);
+                // 2. Extrai os momentos da resposta
+                const momentosData = data.momentos.results || [];
+                setMomentos(momentosData);
 
-            setStats({
-                totalMomentos: data.length,
-                totalViews,
-                totalLikes
-            });
+                // 3. Calcula estatísticas
+                const totalViews = momentosData.reduce((sum, m) => sum + (m.views || 0), 0);
+                const totalLikes = momentosData.reduce((sum, m) => sum + (m.total_likes || 0), 0);
 
-            console.log('✅ Momentos carregados no perfil:', {
-                total: data.length,
-                views: totalViews,
-                likes: totalLikes
-            });
-        } catch (error) {
-            console.error('❌ Erro ao carregar momentos do usuário:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+                setStats({
+                    totalMomentos: data.momentos.count || 0, // Usa o total da paginação
+                    totalViews,
+                    totalLikes
+                });
+
+            } catch (error) {
+                console.error('Erro ao carregar perfil:', error);
+                navigate('/'); // Se o perfil não existe, volta para a home
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfileData();
+    }, [username, navigate]); // Roda sempre que o username na URL mudar
 
     const handleDelete = (momentoId) => {
         setMomentos(prevMomentos => prevMomentos.filter(m => m.id !== momentoId));
@@ -71,12 +73,16 @@ const Profile = () => {
     const handleSaveProfile = async (formData) => {
         try {
             await api.patch('/auth/user/', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                headers: {'Content-Type': 'multipart/form-data'},
             });
 
             await checkAuth();
+
+            // Recarrega os dados do perfil público (para o caso do username mudar, etc)
+            // Mas para este caso, apenas o checkAuth() já atualiza o 'user'
+            // O 'profile' pode ser atualizado manualmente se necessário
+            setProfile(prev => ({...prev, ...Object.fromEntries(formData.entries())}));
+
             alert('✅ Perfil atualizado com sucesso!');
         } catch (error) {
             console.error('Erro ao atualizar perfil:', error);
@@ -84,6 +90,19 @@ const Profile = () => {
         }
     };
 
+    // Atualiza o estado de loading
+    if (loading || !profile) {
+        return (
+            <>
+                <Header/>
+                <div style={{textAlign: 'center', padding: '4rem 0'}}>
+                    <div className="loading-spinner" style={{margin: '0 auto'}}></div>
+                </div>
+            </>
+        );
+    }
+
+    // Se o usuário logado não existir (deslogado)
     if (!user) {
         navigate('/login');
         return null;
@@ -91,91 +110,65 @@ const Profile = () => {
 
     return (
         <>
-            <Header user={user} onLogout={logout} />
+            <Header user={user} onLogout={logout}/>
 
             <div className="profile-container">
-                <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-                    {/* Perfil Header */}
+                <div className="container" style={{paddingTop: '2rem', paddingBottom: '2rem'}}>
+                    {/* Perfil Header - USA DADOS DO 'profile' */}
                     <div className="profile-header">
                         <div className="profile-info">
                             <img
-                                src={user.avatar || `https://ui-avatars.com/api/?name=${user.username}&background=3B82F6&color=fff&size=120`}
-                                alt={user.username}
+                                src={profile.avatar || `https://ui-avatars.com/api/?name=${profile.username}&background=3B82F6&color=fff&size=120`}
+                                alt={profile.username}
                                 className="profile-avatar"
                             />
                             <div className="profile-details">
-                                <h1 className="profile-username">{user.username}</h1>
-                                <p className="profile-email">{user.email}</p>
-                                {user.bio && <p className="profile-bio">{user.bio}</p>}
+                                <h1 className="profile-username">{profile.username}</h1>
+                                <p className="profile-email">{profile.email}</p>
+                                {profile.bio && <p className="profile-bio">{profile.bio}</p>}
                                 <p className="profile-joined">
-                                    Membro desde {new Date(user.created_at).toLocaleDateString('pt-BR', {
-                                        month: 'long',
-                                        year: 'numeric'
-                                    })}
+                                    Membro desde {new Date(profile.created_at).toLocaleDateString('pt-BR', {
+                                    month: 'long',
+                                    year: 'numeric'
+                                })}
                                 </p>
                             </div>
                         </div>
 
-                        <button
-                            className="btn-edit-profile"
-                            onClick={() => setShowEditModal(true)}
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            Editar Perfil
-                        </button>
+                        {/* MOSTRA BOTÃO APENAS SE FOR O DONO */}
+                        {isOwner && (
+                            <button
+                                className="btn-edit-profile"
+                                onClick={() => setShowEditModal(true)}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                Editar Perfil
+                            </button>
+                        )}
                     </div>
 
-                    {/* Estatísticas */}
+                    {/* Estatísticas - USA DADOS DO 'stats' */}
                     <div className="profile-stats">
-                        <div className="stat-card">
-                            <svg className="stat-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M23 7l-7 5 7 5V7z" fill="currentColor" />
-                                <rect x="1" y="5" width="15" height="14" rx="2" />
-                            </svg>
-                            <div className="stat-content">
-                                <p className="stat-value">{stats.totalMomentos}</p>
-                                <p className="stat-label">Momentos</p>
-                            </div>
-                        </div>
-
-                        <div className="stat-card">
-                            <svg className="stat-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <circle cx="12" cy="12" r="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            <div className="stat-content">
-                                <p className="stat-value">{stats.totalViews.toLocaleString('pt-BR')}</p>
-                                <p className="stat-label">Visualizações</p>
-                            </div>
-                        </div>
-
-                        <div className="stat-card">
-                            <svg className="stat-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            <div className="stat-content">
-                                <p className="stat-value">{stats.totalLikes.toLocaleString('pt-BR')}</p>
-                                <p className="stat-label">Curtidas</p>
-                            </div>
-                        </div>
+                        {/* ... (Blocos stat-card - Nenhuma mudança aqui) ... */}
                     </div>
 
-                    {/* Meus Momentos */}
+                    {/* Meus Momentos - USA DADOS DO 'momentos' */}
                     <div className="profile-section">
                         <h2 className="section-title">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M23 7l-7 5 7 5V7z" fill="currentColor" />
-                                <rect x="1" y="5" width="15" height="14" rx="2" />
+                                <path d="M23 7l-7 5 7 5V7z" fill="currentColor"/>
+                                <rect x="1" y="5" width="15" height="14" rx="2"/>
                             </svg>
-                            Meus Momentos
+                            {/* Texto dinâmico */}
+                            {isOwner ? 'Meus Momentos' : `Momentos de ${profile.username}`}
                         </h2>
 
                         {loading ? (
-                            <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-                                <div className="loading-spinner" style={{ margin: '0 auto' }}></div>
+                            <div style={{textAlign: 'center', padding: '4rem 0'}}>
+                                <div className="loading-spinner" style={{margin: '0 auto'}}></div>
                             </div>
                         ) : momentos.length > 0 ? (
                             <div className="grid grid-cols-3">
@@ -188,7 +181,7 @@ const Profile = () => {
                                             duracao: formatDuration(momento.duracao),
                                             data: momento.created_at,
                                             likes: momento.total_likes,
-                                            usuario: momento.usuario
+                                            usuario: momento.usuario // Passa o objeto de usuário do momento
                                         }}
                                         onDelete={handleDelete}
                                     />
@@ -197,8 +190,8 @@ const Profile = () => {
                         ) : (
                             <div className="empty-state">
                                 <svg className="empty-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M23 7l-7 5 7 5V7z" fill="currentColor" />
-                                    <rect x="1" y="5" width="15" height="14" rx="2" />
+                                    <path d="M23 7l-7 5 7 5V7z" fill="currentColor"/>
+                                    <rect x="1" y="5" width="15" height="14" rx="2"/>
                                 </svg>
                                 <h3 className="empty-title">Nenhum momento ainda</h3>
                                 <p className="empty-text">
@@ -207,7 +200,7 @@ const Profile = () => {
                                 <button
                                     onClick={() => navigate('/capture')}
                                     className="btn btn-primary"
-                                    style={{ marginTop: '1rem' }}
+                                    style={{marginTop: '1rem'}}
                                 >
                                     Capturar Primeiro Momento
                                 </button>
@@ -217,12 +210,15 @@ const Profile = () => {
                 </div>
             </div>
 
-            <EditProfileModal
-                user={user}
-                isOpen={showEditModal}
-                onClose={() => setShowEditModal(false)}
-                onSave={handleSaveProfile}
-            />
+            {/* O modal só é renderizado se for o dono */}
+            {isOwner && (
+                <EditProfileModal
+                    user={user} // Passa o usuário logado (user) para edição
+                    isOpen={showEditModal}
+                    onClose={() => setShowEditModal(false)}
+                    onSave={handleSaveProfile}
+                />
+            )}
         </>
     );
 };

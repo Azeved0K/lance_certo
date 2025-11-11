@@ -36,23 +36,23 @@ class MomentoListCreateView(generics.ListCreateAPIView):
     search_fields = ['titulo', 'descricao', 'tags__nome']
     ordering_fields = ['created_at', 'views']
     pagination_class = MomentoPagination  # Ativa paginação
-    
+
     def get_queryset(self):
         # Busca base com prefetch para otimização
         queryset = Momento.objects.select_related('usuario').prefetch_related('tags')
-        
+
         # Filtrar por tag
         tag = self.request.query_params.get('tag', None)
         if tag:
             queryset = queryset.filter(tags__slug=tag)
             logger.info(f"🏷️ Filtrando por tag: {tag}")
-        
+
         # Filtrar por usuário
         usuario = self.request.query_params.get('usuario', None)
         if usuario:
             queryset = queryset.filter(usuario__username=usuario)
             logger.info(f"👤 Filtrando por usuário: {usuario}")
-        
+
         # Busca por texto
         search = self.request.query_params.get('search', None)
         if search:
@@ -62,34 +62,34 @@ class MomentoListCreateView(generics.ListCreateAPIView):
                 Q(tags__nome__icontains=search)
             ).distinct()
             logger.info(f"🔍 Busca por texto: {search}")
-        
+
         sort_by = self.request.query_params.get('sort', 'recent')
         logger.info(f"📊 Ordenação solicitada: {sort_by}")
-        
+
         if sort_by == 'trending':
             # EM ALTA = Ordenar por visualizações
             queryset = queryset.order_by('-views', '-created_at')
             logger.info(f"🔥 Ordenando por views (trending/em alta)")
-            
+
         elif sort_by == 'popular':
             # POPULARES = Ordenar por curtidas (mais curtidas primeiro)
             queryset = queryset.annotate(
                 likes_count=Count('likes', distinct=True)
             ).order_by('-likes_count', '-views', '-created_at')
             logger.info(f"❤️ Ordenando por curtidas (popular)")
-            
+
         else:  # recent (padrão)
             # Ordenar por data de criação (mais recentes primeiro)
             queryset = queryset.order_by('-created_at')
             logger.info(f"📅 Ordenando por data (recent)")
-        
+
         return queryset
-    
+
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return MomentoCreateSerializer
         return MomentoListSerializer
-    
+
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
 
@@ -100,44 +100,44 @@ class MomentoDetailView(APIView):
     DELETE /api/momentos/{id}/ - Deleta um momento
     """
     permission_classes = [IsAuthenticatedOrReadOnly]
-    
+
     def get_object(self, pk):
         return get_object_or_404(
             Momento.objects.select_related('usuario').prefetch_related('tags', 'comentarios'),
             pk=pk
         )
-    
+
     def get(self, request, pk):
         momento = self.get_object(pk)
         serializer = MomentoDetailSerializer(momento, context={'request': request})
         return Response(serializer.data)
-    
+
     def patch(self, request, pk):
         momento = self.get_object(pk)
-        
+
         # Apenas o dono pode editar
         if request.user != momento.usuario:
             return Response(
                 {'error': 'Você não tem permissão para editar este momento'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         serializer = MomentoUpdateSerializer(momento, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(MomentoDetailSerializer(momento, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def delete(self, request, pk):
         momento = self.get_object(pk)
-        
+
         # Apenas o dono pode deletar
         if request.user != momento.usuario:
             return Response(
                 {'error': 'Você não tem permissão para deletar este momento'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         momento.delete()
         return Response(
             {'message': 'Momento deletado com sucesso'},
@@ -229,10 +229,10 @@ class MomentoLikeView(APIView):
                 {'message': 'Você já curtiu este momento'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+
     def delete(self, request, pk):
         momento = get_object_or_404(Momento, pk=pk)
-        
+
         try:
             like = Like.objects.get(usuario=request.user, momento=momento)
             like.delete()
@@ -256,17 +256,17 @@ class ComentarioListCreateView(APIView):
     POST /api/momentos/{id}/comentarios/ - Cria comentário
     """
     permission_classes = [IsAuthenticatedOrReadOnly]
-    
+
     def get(self, request, pk):
         momento = get_object_or_404(Momento, pk=pk)
         comentarios = momento.comentarios.select_related('usuario').order_by('created_at')
         serializer = ComentarioSerializer(comentarios, many=True)
         return Response(serializer.data)
-    
+
     def post(self, request, pk):
         momento = get_object_or_404(Momento, pk=pk)
         serializer = ComentarioSerializer(data=request.data)
-        
+
         if serializer.is_valid():
             serializer.save(usuario=request.user, momento=momento)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -277,17 +277,17 @@ class ComentarioDeleteView(APIView):
     DELETE /api/comentarios/{id}/ - Deleta comentário
     """
     permission_classes = [IsAuthenticated]
-    
+
     def delete(self, request, pk):
         comentario = get_object_or_404(Comentario, pk=pk)
-        
+
         # Apenas o dono ou dono do momento pode deletar
         if request.user != comentario.usuario and request.user != comentario.momento.usuario:
             return Response(
                 {'error': 'Você não tem permissão para deletar este comentário'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         comentario.delete()
         return Response(
             {'message': 'Comentário deletado'},

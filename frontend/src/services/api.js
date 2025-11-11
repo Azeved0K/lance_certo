@@ -39,13 +39,14 @@ export const authService = {
     register: (userData) => api.post('/auth/register/', userData),
     getCurrentUser: () => api.get('/auth/user/'),
     getCsrfToken: () => api.get('/auth/csrf/'),
+    getPublicProfile: (username) => api.get(`/auth/profile/${username}/`),
 };
 
 // Funções de momentos
 export const momentosService = {
-    listar: (params) => api.get('/momentos/', { params }),
+    listar: (params) => api.get('/momentos/', {params}),
     criar: (formData) => api.post('/momentos/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {'Content-Type': 'multipart/form-data'},
     }),
     buscar: (id) => api.get(`/momentos/${id}/`),
     atualizar: (id, data) => api.patch(`/momentos/${id}/`, data),

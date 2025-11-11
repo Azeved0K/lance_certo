@@ -5,12 +5,12 @@ class Tag(models.Model):
     nome = models.CharField(max_length=50, unique=True, verbose_name='Nome')
     slug = models.SlugField(max_length=50, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = 'Tag'
         verbose_name_plural = 'Tags'
         ordering = ['nome']
-    
+
     def __str__(self):
         return self.nome
 
@@ -30,19 +30,19 @@ class Momento(models.Model):
     tags = models.ManyToManyField(Tag, related_name='momentos', blank=True, verbose_name='Tags')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
-    
+
     class Meta:
         verbose_name = 'Momento'
         verbose_name_plural = 'Momentos'
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return self.titulo
-    
+
     @property
     def total_likes(self):
         return self.likes.count()
-    
+
     def incrementar_views(self):
         self.views += 1
         self.save(update_fields=['views'])
@@ -61,13 +61,13 @@ class Like(models.Model):
         verbose_name='Momento'
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
-    
+
     class Meta:
         verbose_name = 'Like'
         verbose_name_plural = 'Likes'
         unique_together = ['usuario', 'momento']
         ordering = ['-created_at']
-    
+
     def __str__(self):
         return f'{self.usuario.username} curtiu {self.momento.titulo}'
 
@@ -87,12 +87,12 @@ class Comentario(models.Model):
     texto = models.TextField(max_length=500, verbose_name='Texto')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
-    
+
     class Meta:
         verbose_name = 'Comentário'
         verbose_name_plural = 'Comentários'
         ordering = ['created_at']
-    
+
     def __str__(self):
         return f'{self.usuario.username} comentou em {self.momento.titulo}'
 

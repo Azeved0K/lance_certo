@@ -7,7 +7,7 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ['nome', 'slug']
     prepopulated_fields = {'slug': ('nome',)}
     ordering = ['nome']
-    
+
     def total_momentos(self, obj):
         return obj.momentos.count()
     total_momentos.short_description = 'Total de Momentos'
@@ -20,7 +20,7 @@ class MomentoAdmin(admin.ModelAdmin):
     readonly_fields = ['views', 'created_at', 'updated_at', 'total_likes', 'total_comentarios']
     filter_horizontal = ['tags']
     ordering = ['-created_at']
-    
+
     fieldsets = (
         ('Informações Básicas', {
             'fields': ('usuario', 'titulo', 'descricao')
@@ -35,7 +35,7 @@ class MomentoAdmin(admin.ModelAdmin):
             'fields': ('views', 'total_likes', 'total_comentarios', 'created_at', 'updated_at')
         }),
     )
-    
+
     def total_comentarios(self, obj):
         return obj.comentarios.count()
     total_comentarios.short_description = 'Total de Comentários'
@@ -46,7 +46,7 @@ class LikeAdmin(admin.ModelAdmin):
     list_filter = ['created_at']
     search_fields = ['usuario__username', 'momento__titulo']
     ordering = ['-created_at']
-    
+
     def has_add_permission(self, request):
         # Prevenir criação manual via admin (likes devem vir da API)
         return False
@@ -58,7 +58,7 @@ class ComentarioAdmin(admin.ModelAdmin):
     search_fields = ['usuario__username', 'momento__titulo', 'texto']
     readonly_fields = ['created_at', 'updated_at']
     ordering = ['-created_at']
-    
+
     def texto_resumido(self, obj):
         return obj.texto[:50] + '...' if len(obj.texto) > 50 else obj.texto
     texto_resumido.short_description = 'Texto'

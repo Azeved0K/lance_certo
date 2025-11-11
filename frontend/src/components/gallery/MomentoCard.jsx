@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ NOVO
+import {Link, useNavigate} from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { momentosService } from '../../services/api';
 import '../../styles/components/MomentoCard.css';
 
 const MomentoCard = ({ momento, onLike, onDelete }) => {
-    const navigate = useNavigate(); // ✅ NOVO
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [liked, setLiked] = useState(momento.is_liked || false);
     const [showMenu, setShowMenu] = useState(false);
@@ -119,13 +119,14 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
         }
     };
 
-    // ✅ NOVO: Navegar para página de vídeo
+    // Navegar para página de vídeo
     const handleOpenVideo = async (e) => {
         // Prevenir navegação se clicar em botões/ações
         if (e.target.closest('.actionBtn') ||
             e.target.closest('.menuBtn') ||
             e.target.closest('.cardDropdown') ||
-            e.target.closest('button')) {
+            e.target.closest('button') ||
+            e.target.closest('.user-avatar-link')) {
             return;
         }
 
@@ -200,9 +201,24 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                 <div className="content">
                     <h3 className="title">{momento.titulo}</h3>
                     <p className="description">{momento.descricao}</p>
+
+                    {/* DIV .user ATUALIZADA */}
                     <div className="user">
-                        <img src={momento.usuario?.avatar || `https://ui-avatars.com/api/?name=${momento.usuario?.username || momento.usuario?.nome}&background=3B82F6&color=fff`} alt={momento.usuario?.username || momento.usuario?.nome} className="avatar" />
-                        <span className="username">{momento.usuario?.username || momento.usuario?.nome}</span>
+                        <Link
+                            to={`/profile/${momento.usuario?.username}`}
+                            onClick={(e) => e.stopPropagation()} // Impede o card de abrir o vídeo
+                            className="user-avatar-link"
+                            title={momento.usuario?.username}
+                        >
+                            <img
+                                src={momento.usuario?.avatar || `https://ui-avatars.com/api/?name=${momento.usuario?.username || momento.usuario?.nome}&background=3B82F6&color=fff`}
+                                alt={momento.usuario?.username || momento.usuario?.nome}
+                                className="avatar"
+                            />
+                            <span className="username">
+                                {momento.usuario?.username || momento.usuario?.nome}
+                            </span>
+                        </Link>
                         <span className="date">{formatDate(momento.data || momento.created_at)}</span>
                     </div>
                     <div className="stats">

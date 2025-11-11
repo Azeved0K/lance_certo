@@ -618,4 +618,24 @@
         flex-direction: column;
         gap: 0.5rem;
     }
+
+    .user-avatar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    flex: 1;
+    min-width: 0;
+    }
+
+    .user-avatar-link:hover .username {
+        color: var(--primary-color);
+    }
+
+    .user .username {
+        transition: color 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }

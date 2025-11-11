@@ -180,7 +180,12 @@ const Header = () => {
                                         <span className="username">{user.username}</span>
                                     </button>
                                     <div className="dropdown">
-                                        <Link to="/profile" className="dropdownItem">
+
+                                        {/* LINK ATUALIZADO */}
+                                        <Link
+                                            to={ `/profile/${user.username }`}
+                                            className="dropdownItem"
+                                        >
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <circle cx="12" cy="8" r="4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                 <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

@@ -1,5 +1,3 @@
-/* frontend/src/styles/pages/VideoPlayer.css */
-
 .video-player-container {
     min-height: calc(100vh - 64px);
     background: var(--gray-50);
@@ -470,5 +468,18 @@
         width: 40px;
         height: 40px;
         justify-content: center;
+    }
+
+    .uploader-info-link {
+    text-decoration: none;
+    display: block;
+    }
+
+    .uploader-info-link:hover .uploader-name {
+        color: var(--primary-color);
+    }
+
+    .uploader-name {
+        transition: color 0.2s;
     }
 }

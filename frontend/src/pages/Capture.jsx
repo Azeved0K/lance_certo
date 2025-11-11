@@ -367,7 +367,7 @@ const Capture = ({ user, onLogout }) => {
 
     return (
         <>
-            <Header user={user} onLogout={onLogout} />
+            <Header user={ user } onLogout={ onLogout }/>
 
             <div className="capture-container">
                 <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
@@ -409,9 +409,9 @@ const Capture = ({ user, onLogout }) => {
                                 {!isRecording && (
                                     <div className="placeholder-content">
                                         <svg className="camera-icon" width="80" height="80" viewBox="0 0 24 24" fill="none">
-                                            <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-                                            <circle cx="9" cy="12" r="2" stroke="currentColor" strokeWidth="2" />
-                                            <path d="M15 9l4-2v10l-4-2" stroke="currentColor" strokeWidth="2" />
+                                            <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2"/>
+                                            <circle cx="9" cy="12" r="2" stroke="currentColor" strokeWidth="2"/>
+                                            <path d="M15 9l4-2v10l-4-2" stroke="currentColor" strokeWidth="2"/>
                                         </svg>
                                         <p className="placeholder-text">Pronto para começar</p>
                                         <p className="placeholder-small">📹 Modo: Captura de Câmera</p>
@@ -431,7 +431,7 @@ const Capture = ({ user, onLogout }) => {
                                         <div className="controls-main">
                                             <button onClick={startCapture} className="btn-record">
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                                    <circle cx="12" cy="12" r="10" fill="currentColor" />
+                                                    <circle cx="12" cy="12" r="10" fill="currentColor"/>
                                                 </svg>
                                                 Iniciar Gravação
                                             </button>
@@ -451,16 +451,16 @@ const Capture = ({ user, onLogout }) => {
                                     <div className="recording-controls">
                                         <button onClick={handleSaveClip} className="btn-save-clip">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                <polyline points="17 21 17 13 7 13 7 21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                <polyline points="7 3 7 8 15 8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <polyline points="17 21 17 13 7 13 7 21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <polyline points="7 3 7 8 15 8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
                                             Salvar Clipe (últimos 60s)
                                         </button>
 
                                         <button onClick={handleStopRecording} className="btn-stop">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                                <rect x="6" y="6" width="12" height="12" fill="currentColor" />
+                                                <rect x="6" y="6" width="12" height="12" fill="currentColor"/>
                                             </svg>
                                             Parar e Finalizar
                                         </button>
@@ -599,7 +599,7 @@ const Capture = ({ user, onLogout }) => {
                                     {isUploading ? (
                                         <>
                                             <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <circle cx="12" cy="12" r="10" strokeWidth="3" fill="none" />
+                                                <circle cx="12" cy="12" r="10" strokeWidth="3" fill="none"/>
                                             </svg>
                                             Publicando...
                                         </>

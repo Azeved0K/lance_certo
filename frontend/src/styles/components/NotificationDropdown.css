@@ -82,9 +82,11 @@
 .notification-icon.like {
     background: var(--danger-color);
 }
+
 .notification-icon.view {
     background: var(--primary-color);
 }
+
 .notification-icon.view svg circle {
     fill: var(--primary-color);
     stroke: white;
