@@ -177,7 +177,13 @@ const Header = () => {
                                             alt={user.username}
                                             className="avatar"
                                         />
-                                        <span className="username">{user.username}</span>
+                                        <span className="username">
+                                            {/* Lógica para exibir o nome completo ou o username como fallback */}
+                                            {user.first_name || user.last_name ?
+                                                `${user.first_name || ''} ${user.last_name || ''}`.trim() :
+                                                user.username
+                                            }
+                                        </span>
                                     </button>
                                     <div className="dropdown">
 

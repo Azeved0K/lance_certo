@@ -10,8 +10,8 @@ import '../styles/pages/Profile.css';
 
 const Profile = () => {
     const navigate = useNavigate();
-    const {username} = useParams();
-    const {user, logout, checkAuth} = useAuth(); // 'user' é o usuário LOGADO
+    const { username } = useParams();
+    const { user, logout, checkAuth } = useAuth(); // 'user' é o usuário LOGADO
     const [profile, setProfile] = useState(null); // Estado para o perfil VISITADO
     const [momentos, setMomentos] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -73,7 +73,7 @@ const Profile = () => {
     const handleSaveProfile = async (formData) => {
         try {
             await api.patch('/auth/user/', formData, {
-                headers: {'Content-Type': 'multipart/form-data'},
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
 
             await checkAuth();
@@ -81,7 +81,7 @@ const Profile = () => {
             // Recarrega os dados do perfil público (para o caso do username mudar, etc)
             // Mas para este caso, apenas o checkAuth() já atualiza o 'user'
             // O 'profile' pode ser atualizado manualmente se necessário
-            setProfile(prev => ({...prev, ...Object.fromEntries(formData.entries())}));
+            setProfile(prev => ({ ...prev, ...Object.fromEntries(formData.entries()) }));
 
             alert('✅ Perfil atualizado com sucesso!');
         } catch (error) {
@@ -94,9 +94,9 @@ const Profile = () => {
     if (loading || !profile) {
         return (
             <>
-                <Header/>
-                <div style={{textAlign: 'center', padding: '4rem 0'}}>
-                    <div className="loading-spinner" style={{margin: '0 auto'}}></div>
+                <Header />
+                <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+                    <div className="loading-spinner" style={{ margin: '0 auto' }}></div>
                 </div>
             </>
         );
@@ -110,10 +110,10 @@ const Profile = () => {
 
     return (
         <>
-            <Header user={user} onLogout={logout}/>
+            <Header user={user} onLogout={logout} />
 
             <div className="profile-container">
-                <div className="container" style={{paddingTop: '2rem', paddingBottom: '2rem'}}>
+                <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
                     {/* Perfil Header - USA DADOS DO 'profile' */}
                     <div className="profile-header">
                         <div className="profile-info">
@@ -123,14 +123,19 @@ const Profile = () => {
                                 className="profile-avatar"
                             />
                             <div className="profile-details">
-                                <h1 className="profile-username">{profile.username}</h1>
+                                <h1 className="profile-username">
+                                    {profile.first_name || profile.last_name ?
+                                        `${profile.first_name || ''} ${profile.last_name || ''}`.trim() :
+                                        profile.username
+                                    }
+                                </h1>
                                 <p className="profile-email">{profile.email}</p>
                                 {profile.bio && <p className="profile-bio">{profile.bio}</p>}
                                 <p className="profile-joined">
                                     Membro desde {new Date(profile.created_at).toLocaleDateString('pt-BR', {
-                                    month: 'long',
-                                    year: 'numeric'
-                                })}
+                                        month: 'long',
+                                        year: 'numeric'
+                                    })}
                                 </p>
                             </div>
                         </div>
@@ -142,8 +147,8 @@ const Profile = () => {
                                 onClick={() => setShowEditModal(true)}
                             >
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                                 Editar Perfil
                             </button>
@@ -152,23 +157,53 @@ const Profile = () => {
 
                     {/* Estatísticas - USA DADOS DO 'stats' */}
                     <div className="profile-stats">
-                        {/* ... (Blocos stat-card - Nenhuma mudança aqui) ... */}
+                        <div className="stat-card">
+                            <svg className="stat-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M23 7l-7 5 7 5V7z" fill="currentColor"/>
+                                <rect x="1" y="5" width="15" height="14" rx="2"/>
+                            </svg>
+                            <div className="stat-content">
+                                <div className="stat-value">{stats.totalMomentos}</div>
+                                <div className="stat-label">Momentos</div>
+                            </div>
+                        </div>
+
+                        <div className="stat-card">
+                            <svg className="stat-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <circle cx="12" cy="12" r="3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <div className="stat-content">
+                                <div className="stat-value">{stats.totalViews}</div>
+                                <div className="stat-label">Visualizações</div>
+                            </div>
+                        </div>
+
+                        <div className="stat-card">
+                            <svg className="stat-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            <div className="stat-content">
+                                <div className="stat-value">{stats.totalLikes}</div>
+                                <div className="stat-label">Curtidas</div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Meus Momentos - USA DADOS DO 'momentos' */}
                     <div className="profile-section">
                         <h2 className="section-title">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path d="M23 7l-7 5 7 5V7z" fill="currentColor"/>
-                                <rect x="1" y="5" width="15" height="14" rx="2"/>
+                                <path d="M23 7l-7 5 7 5V7z" fill="currentColor" />
+                                <rect x="1" y="5" width="15" height="14" rx="2" />
                             </svg>
                             {/* Texto dinâmico */}
                             {isOwner ? 'Meus Momentos' : `Momentos de ${profile.username}`}
                         </h2>
 
                         {loading ? (
-                            <div style={{textAlign: 'center', padding: '4rem 0'}}>
-                                <div className="loading-spinner" style={{margin: '0 auto'}}></div>
+                            <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+                                <div className="loading-spinner" style={{ margin: '0 auto' }}></div>
                             </div>
                         ) : momentos.length > 0 ? (
                             <div className="grid grid-cols-3">
@@ -190,8 +225,8 @@ const Profile = () => {
                         ) : (
                             <div className="empty-state">
                                 <svg className="empty-icon" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M23 7l-7 5 7 5V7z" fill="currentColor"/>
-                                    <rect x="1" y="5" width="15" height="14" rx="2"/>
+                                    <path d="M23 7l-7 5 7 5V7z" fill="currentColor" />
+                                    <rect x="1" y="5" width="15" height="14" rx="2" />
                                 </svg>
                                 <h3 className="empty-title">Nenhum momento ainda</h3>
                                 <p className="empty-text">
@@ -200,7 +235,7 @@ const Profile = () => {
                                 <button
                                     onClick={() => navigate('/capture')}
                                     className="btn btn-primary"
-                                    style={{marginTop: '1rem'}}
+                                    style={{ marginTop: '1rem' }}
                                 >
                                     Capturar Primeiro Momento
                                 </button>

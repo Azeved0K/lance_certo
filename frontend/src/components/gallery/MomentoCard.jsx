@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { momentosService } from '../../services/api';
 import '../../styles/components/MomentoCard.css';
@@ -217,7 +217,10 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                             />
                             <div className="user-info">
                                 <span className="user-name">
-                                    {momento.usuario?.username || momento.usuario?.nome}
+                                    {momento.usuario?.first_name || momento.usuario?.last_name ?
+                                        `${momento.usuario.first_name || ''} ${momento.usuario.last_name || ''}`.trim() :
+                                        (momento.usuario?.username || momento.usuario?.nome)
+                                    }
                                 </span>
                                 <span className="user-date">{formatDate(momento.data || momento.created_at)}</span>
                             </div>
