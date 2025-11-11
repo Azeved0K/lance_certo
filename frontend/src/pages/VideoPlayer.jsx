@@ -1,4 +1,3 @@
-// frontend/src/pages/VideoPlayer.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,8 +20,15 @@ const VideoPlayer = () => {
 
     useEffect(() => {
         fetchMomento();
-        fetchSugestoes();
+        // A busca de sugestões agora depende do estado do momento
+        // Ela será chamada em outro useEffect abaixo, após 'momento' ser definido.
     }, [id]);
+
+    useEffect(() => {
+        if (momento) {
+            fetchSugestoes();
+        }
+    }, [momento]); // Chama a busca de sugestões quando o momento carregar
 
     const fetchMomento = async () => {
         try {
@@ -39,15 +45,41 @@ const VideoPlayer = () => {
     };
 
     const fetchSugestoes = async () => {
+        if (!momento || !momento.tags || momento.tags.length === 0) {
+            console.log('Vídeo sem tags para buscar sugestões contextuais.');
+            setSugestoes([]);
+            return;
+        }
+
+        // Pega a primeira tag como critério principal
+        const primaryTag = momento.tags[0].slug || momento.tags[0].nome; 
+
         try {
-            // Ajuste: A API de sugestões não foi implementada no backend.
-            // Vamos buscar momentos recentes como sugestão, excluindo o atual.
-            const response = await momentosService.listar({sort: 'recent', page_size: 10});
+            const params = {
+                // Filtra pelo slug/nome da tag principal do vídeo atual
+                tag: primaryTag, 
+                // Ordena por popularidade/recente para ter sugestões relevantes
+                sort: 'popular', 
+                page_size: 10
+            };
+            
+            const response = await momentosService.listar(params);
+            
             const allMomentos = response.data?.results || [];
-            // Filtra o momento atual da lista de sugestões
-            setSugestoes(allMomentos.filter(m => m.id !== parseInt(id, 10)));
+            
+            // Filtra: 
+            // 1. Remove o vídeo atual da lista
+            // 2. Garante que pegamos apenas sugestões (máx. 9, pois 1 slot é o atual)
+            const filteredSugestoes = allMomentos
+                .filter(m => m.id !== parseInt(id, 10))
+                .slice(0, 9);
+            
+            setSugestoes(filteredSugestoes);
+            
+            console.log(`✅ Sugestões carregadas para tag: ${primaryTag}. Total: ${filteredSugestoes.length}`);
         } catch (error) {
             console.error('Erro ao buscar sugestões:', error);
+            setSugestoes([]);
         }
     };
 
@@ -105,7 +137,7 @@ const VideoPlayer = () => {
     if (loading) {
         return (
             <>
-                <Header/>
+                <Header />
                 <div className="video-player-loading">
                     <div className="loading-spinner"></div>
                 </div>
@@ -116,7 +148,7 @@ const VideoPlayer = () => {
     if (!momento) {
         return (
             <>
-                <Header/>
+                <Header />
                 <div className="video-player-error">
                     <h2>Vídeo não encontrado</h2>
                     <Link to="/" className="btn btn-primary">Voltar ao Início</Link>
@@ -127,7 +159,7 @@ const VideoPlayer = () => {
 
     return (
         <>
-            <Header/>
+            <Header />
 
             <div className="video-player-container">
                 <div className="container-fluid">
@@ -156,8 +188,8 @@ const VideoPlayer = () => {
                                     <div className="video-stats">
                                         <div className="stat-item">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2"/>
-                                                <circle cx="12" cy="12" r="3" strokeWidth="2"/>
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2" />
+                                                <circle cx="12" cy="12" r="3" strokeWidth="2" />
                                             </svg>
                                             <span>{formatViews(momento.views)} visualizações</span>
                                         </div>
@@ -174,17 +206,17 @@ const VideoPlayer = () => {
                                             className={`action-btn ${liked ? 'liked' : ''}`}
                                         >
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor">
-                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2"/>
+                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" />
                                             </svg>
                                             <span>{formatViews(momento.total_likes)}</span>
                                         </button>
 
                                         <button className="action-btn">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <circle cx="18" cy="5" r="3" strokeWidth="2"/>
-                                                <circle cx="6" cy="12" r="3" strokeWidth="2"/>
-                                                <circle cx="18" cy="19" r="3" strokeWidth="2"/>
-                                                <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" strokeWidth="2"/>
+                                                <circle cx="18" cy="5" r="3" strokeWidth="2" />
+                                                <circle cx="6" cy="12" r="3" strokeWidth="2" />
+                                                <circle cx="18" cy="19" r="3" strokeWidth="2" />
+                                                <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" strokeWidth="2" />
                                             </svg>
                                             <span>Compartilhar</span>
                                         </button>
@@ -204,7 +236,13 @@ const VideoPlayer = () => {
                                                 className="uploader-avatar"
                                             />
                                             <div className="uploader-details">
-                                                <h3 className="uploader-name">{momento.usuario?.username}</h3>
+                                                <h3 className="uploader-name">
+                                                    {/* CORREÇÃO DO NOME DO UPLOADER */}
+                                                    {momento.usuario?.first_name || momento.usuario?.last_name ?
+                                                        `${momento.usuario.first_name || ''} ${momento.usuario.last_name || ''}`.trim() :
+                                                        momento.usuario?.username
+                                                    }
+                                                </h3>
                                                 <p className="uploader-stats">
                                                     {momento.usuario?.total_momentos} vídeos
                                                 </p>

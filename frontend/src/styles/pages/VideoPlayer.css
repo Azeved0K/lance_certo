@@ -5,14 +5,16 @@
 }
 
 .container-fluid {
-    max-width: 1920px;
+    max-width: 1400px;
+    /* Alterado para limitar o tamanho do player */
     margin: 0 auto;
     padding: 0 1.5rem;
 }
 
 .video-player-layout {
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: 1fr 350px;
+    /* Alterado para 350px */
     gap: 1.5rem;
     align-items: start;
 }
@@ -382,7 +384,8 @@
 
 @media (max-width: 1280px) {
     .video-player-layout {
-        grid-template-columns: 1fr 350px;
+        grid-template-columns: 1fr 300px;
+        /* Alterado para 300px */
     }
 
     .suggestion-thumbnail {
@@ -471,8 +474,8 @@
     }
 
     .uploader-info-link {
-    text-decoration: none;
-    display: block;
+        text-decoration: none;
+        display: block;
     }
 
     .uploader-info-link:hover .uploader-name {

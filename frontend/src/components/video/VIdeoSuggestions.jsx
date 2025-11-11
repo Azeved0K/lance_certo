@@ -1,4 +1,3 @@
-// frontend/src/components/video/VideoSuggestions.jsx
 import { Link } from 'react-router-dom';
 
 const VideoSuggestions = ({ sugestoes, currentVideoId }) => {
@@ -73,7 +72,11 @@ const VideoSuggestions = ({ sugestoes, currentVideoId }) => {
 
                             <div className="suggestion-meta">
                                 <span className="suggestion-uploader">
-                                    {sugestao.usuario?.username}
+                                    {/* CORREÇÃO DO NOME DO UPLOADER */}
+                                    {sugestao.usuario?.first_name || sugestao.usuario?.last_name ?
+                                        `${sugestao.usuario.first_name || ''} ${sugestao.usuario.last_name || ''}`.trim() :
+                                        sugestao.usuario?.username
+                                    }
                                 </span>
 
                                 <div className="suggestion-stats">
