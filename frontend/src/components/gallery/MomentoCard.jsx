@@ -126,7 +126,7 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
             e.target.closest('.menuBtn') ||
             e.target.closest('.cardDropdown') ||
             e.target.closest('button') ||
-            e.target.closest('.user-avatar-link')) {
+            e.target.closest('.user-link')) {
             return;
         }
 
@@ -202,25 +202,28 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                     <h3 className="title">{momento.titulo}</h3>
                     <p className="description">{momento.descricao}</p>
 
-                    {/* DIV .user ATUALIZADA */}
+                    {/* DIV .user MELHORADA */}
                     <div className="user">
                         <Link
                             to={`/profile/${momento.usuario?.username}`}
-                            onClick={(e) => e.stopPropagation()} // Impede o card de abrir o vídeo
-                            className="user-avatar-link"
-                            title={momento.usuario?.username}
+                            onClick={(e) => e.stopPropagation()}
+                            className="user-link"
+                            title={`Ver perfil de ${momento.usuario?.username}`}
                         >
                             <img
-                                src={momento.usuario?.avatar || `https://ui-avatars.com/api/?name=${momento.usuario?.username || momento.usuario?.nome}&background=3B82F6&color=fff`}
+                                src={momento.usuario?.avatar || `https://ui-avatars.com/api/?name=${momento.usuario?.username || momento.usuario?.nome}&background=3B82F6&color=fff&size=80`}
                                 alt={momento.usuario?.username || momento.usuario?.nome}
-                                className="avatar"
+                                className="user-avatar"
                             />
-                            <span className="username">
-                                {momento.usuario?.username || momento.usuario?.nome}
-                            </span>
+                            <div className="user-info">
+                                <span className="user-name">
+                                    {momento.usuario?.username || momento.usuario?.nome}
+                                </span>
+                                <span className="user-date">{formatDate(momento.data || momento.created_at)}</span>
+                            </div>
                         </Link>
-                        <span className="date">{formatDate(momento.data || momento.created_at)}</span>
                     </div>
+
                     <div className="stats">
                         <div className="statsLeft">
                             <div className="stat">
