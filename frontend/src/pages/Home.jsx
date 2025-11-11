@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/layout/Header';
 import MomentoCard from '../components/gallery/MomentoCard';
-import { momentosService } from '../services/api';
+import { momentosService, authService } from '../services/api';
 import '../styles/pages/Home.css';
 
 const mockTags = ['Todos', 'Futebol', 'Basquete', 'Volei', 'Gol', 'Defesa', 'Drible'];
@@ -12,7 +12,7 @@ const Home = () => {
     const { user, logout } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    // ✅ Ler parâmetros da URL
+    // Ler parâmetros da URL
     const searchQuery = searchParams.get('search') || '';
     const tagParam = searchParams.get('tag') || 'Todos';
     const sortParam = searchParams.get('sort') || 'recent';
@@ -24,13 +24,17 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // ✅ NOVO: Estados de paginação
+    // Resultados de Usuários
+    const [userResults, setUserResults] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+
+    // Estados de paginação
     const [currentPage, setCurrentPage] = useState(pageParam);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const [pageInput, setPageInput] = useState(pageParam.toString());
 
-    // ✅ Sincronizar estado com URL
+    // Sincronizar estado com URL
     useEffect(() => {
         const newSearchParams = new URLSearchParams();
 
@@ -42,13 +46,34 @@ const Home = () => {
         setSearchParams(newSearchParams, { replace: true });
     }, [selectedTag, sortBy, searchQuery, currentPage, setSearchParams]);
 
-    // ✅ Resetar para página 1 quando filtros mudarem
+    // Resetar para página 1 quando filtros mudarem
     useEffect(() => {
         setCurrentPage(1);
         setPageInput('1');
     }, [selectedTag, sortBy, searchQuery]);
 
-    // ✅ Buscar momentos quando página ou filtros mudarem
+    useEffect(() => {
+        const fetchUsers = async () => {
+            if (searchQuery) {
+                setLoadingUsers(true);
+                try {
+                    const response = await authService.searchUsers(searchQuery);
+                    setUserResults(response.data.results || []); // API agora é paginada
+                } catch (err) {
+                    console.error("Erro ao buscar usuários:", err);
+                    setUserResults([]);
+                } finally {
+                    setLoadingUsers(false);
+                }
+            } else {
+                setUserResults([]); // Limpa se a busca for limpa
+            }
+        };
+
+        fetchUsers();
+    }, [searchQuery]); // Depende apenas da query de busca
+
+    // Buscar momentos quando página ou filtros mudarem
     useEffect(() => {
         fetchMomentos();
         // Scroll para o topo ao mudar de página
@@ -62,10 +87,10 @@ const Home = () => {
 
             const params = {
                 page: currentPage,
-                page_size: 9  // ✅ 9 momentos por página (3x3)
+                page_size: 9  // 9 momentos por página (3x3)
             };
 
-            // ✅ Se sortBy for 'meus', filtrar por usuário logado
+            // Se sortBy for 'meus', filtrar por usuário logado
             if (sortBy === 'meus' && user) {
                 params.usuario = user.username;
                 params.sort = 'recent';
@@ -87,7 +112,7 @@ const Home = () => {
 
             const response = await momentosService.listar(params);
 
-            // ✅ Resposta paginada do Django REST Framework
+            // Resposta paginada do Django REST Framework
             const data = response.data?.results || response.data || [];
             const count = response.data?.count || 0;
 
@@ -138,7 +163,7 @@ const Home = () => {
         window.location.href = '/';
     };
 
-    // ✅ NOVO: Funções de navegação de página
+    // Funções de navegação de página
     const goToFirstPage = () => {
         setCurrentPage(1);
         setPageInput('1');
@@ -209,28 +234,28 @@ const Home = () => {
             case 'meus':
                 return (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <circle cx="12" cy="8" r="4" strokeWidth="2" />
-                        <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" strokeWidth="2" />
+                        <circle cx="12" cy="8" r="4" strokeWidth="2"/>
+                        <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" strokeWidth="2"/>
                     </svg>
                 );
             case 'trending':
                 return (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" fill="currentColor" />
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" fill="currentColor"/>
                     </svg>
                 );
             case 'popular':
                 return (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                 );
             case 'recent':
             default:
                 return (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                        <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" />
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2"/>
                     </svg>
                 );
         }
@@ -238,7 +263,7 @@ const Home = () => {
 
     return (
         <>
-            <Header user={user} onLogout={logout} />
+            <Header user={user} onLogout={logout}/>
 
             {/* Hero */}
             <div className="hero">
@@ -253,20 +278,35 @@ const Home = () => {
             <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
                 {/* Banner de Busca Ativa */}
                 {searchQuery && (
-                    <div className="search-active-banner">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <circle cx="11" cy="11" r="8" strokeWidth="2" />
-                            <path d="M21 21l-4.35-4.35" strokeWidth="2" />
-                        </svg>
-                        <span>
-                            Resultados para: <strong>"{searchQuery}"</strong>
-                        </span>
-                        <button
-                            onClick={clearSearch}
-                            className="clear-search-btn"
-                        >
-                            Limpar busca
-                        </button>
+                    <div className="search-results-container">
+                        <h2 className="search-results-title">
+                            Resultados para "{searchQuery}"
+                        </h2>
+
+                        {/* Resultados de Usuários */}
+                        {loadingUsers ? (
+                            <div className="loading-spinner-small"></div>
+                        ) : (
+                            userResults.length > 0 && (
+                                <div className="user-results-section">
+                                    <h3>Usuários encontrados</h3>
+                                    <div className="user-results-grid">
+                                        {userResults.map((u) => (
+                                            <Link key={u.id} to={`/profile/${u.username}`} className="user-result-card">
+                                                <img
+                                                    src={u.avatar || `https://ui-avatars.com/api/?name=${u.username}&background=3B82F6&color=fff`}
+                                                    alt={u.username}
+                                                />
+                                                <span>{u.username}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        )}
+
+                        {/* Divisor */}
+                        <hr className="search-divider" />
                     </div>
                 )}
 
@@ -293,7 +333,8 @@ const Home = () => {
                         <div className="sortInfo">
                             {getSortIcon()}
                             <span className="sortLabel">
-                                {getSortLabel()}
+                                {/* Título dinâmico se estiver buscando */}
+                                {searchQuery ? "Resultados de Momentos" : getSortLabel()}
                             </span>
                             <span className="count">
                                 ({totalCount} {totalCount === 1 ? 'momento' : 'momentos'})
@@ -307,8 +348,8 @@ const Home = () => {
                                 title="Momentos mais recentes"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-                                    <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" />
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                                    <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2"/>
                                 </svg>
                                 Recentes
                             </button>
@@ -318,7 +359,7 @@ const Home = () => {
                                 title="Momentos com mais visualizações"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" />
+                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2"/>
                                 </svg>
                                 Em Alta
                             </button>
@@ -328,7 +369,7 @@ const Home = () => {
                                 title="Momentos com mais curtidas"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                                 Populares
                             </button>
@@ -340,8 +381,8 @@ const Home = () => {
                                     title="Seus vídeos publicados"
                                 >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                        <circle cx="12" cy="8" r="4" strokeWidth="2" />
-                                        <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" strokeWidth="2" />
+                                        <circle cx="12" cy="8" r="4" strokeWidth="2"/>
+                                        <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" strokeWidth="2"/>
                                     </svg>
                                     Seus Vídeos
                                 </button>
@@ -396,7 +437,7 @@ const Home = () => {
                             ))}
                         </div>
 
-                        {/* ✅ NOVO: Paginação */}
+                        {/* Paginação */}
                         {totalPages > 1 && (
                             <div className="pagination">
                                 <div className="pagination-info">
@@ -415,7 +456,7 @@ const Home = () => {
                                         title="Primeira página"
                                     >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
                                     </button>
 
@@ -427,7 +468,7 @@ const Home = () => {
                                         title="Página anterior"
                                     >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M15 19l-7-7 7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
                                         Anterior
                                     </button>
@@ -456,7 +497,7 @@ const Home = () => {
                                     >
                                         Próxima
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
                                     </button>
 
@@ -468,7 +509,7 @@ const Home = () => {
                                         title="Última página"
                                     >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path d="M13 5l7 7-7 7M6 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M13 5l7 7-7 7M6 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
                                     </button>
                                 </div>

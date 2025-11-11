@@ -18,7 +18,7 @@
     opacity: 0.95;
 }
 
-/* ✅ NOVO: User Videos Section */
+/* User Videos Section */
 .user-videos-section {
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(99, 102, 241, 0.05));
     border: 2px solid rgba(59, 130, 246, 0.2);
@@ -105,19 +105,88 @@
     gap: 1.5rem;
 }
 
-/* Search Active Banner */
-.search-active-banner {
+.search-results-container {
+    background: white;
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+.search-results-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 1.5rem;
+}
+
+.user-results-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.user-results-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.user-result-card {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 1rem 1.5rem;
-    background: linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
-    border: 2px solid var(--primary-color);
+    padding: 0.75rem 1rem;
+    background: var(--gray-50);
+    border: 2px solid var(--gray-200);
     border-radius: 12px;
-    margin-bottom: 2rem;
-    color: var(--primary-color);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.user-result-card:hover {
+    border-color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.05);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.user-result-card img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-result-card span {
+    font-size: 0.9375rem;
     font-weight: 600;
-    animation: slideIn 0.3s ease-out;
+    color: var(--gray-800);
+}
+
+.loading-spinner-small {
+    border: 3px solid var(--gray-200);
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+.search-divider {
+    border: none;
+    height: 1px;
+    background-color: var(--gray-200);
+    margin-top: 2rem;
+}
+
+/* Search Active Banner */
+.search-active-banner {
+    display: none;
 }
 
 @keyframes slideIn {

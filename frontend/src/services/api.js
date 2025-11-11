@@ -40,6 +40,7 @@ export const authService = {
     getCurrentUser: () => api.get('/auth/user/'),
     getCsrfToken: () => api.get('/auth/csrf/'),
     getPublicProfile: (username) => api.get(`/auth/profile/${username}/`),
+    searchUsers: (query) => api.get(`/auth/search/`, { params: { search: query } }),
 };
 
 // Funções de momentos

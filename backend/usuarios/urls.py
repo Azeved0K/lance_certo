@@ -5,7 +5,8 @@ from .views import (
     LogoutView,
     CurrentUserView,
     CSRFTokenView,
-    PublicProfileView
+    PublicProfileView,
+    UserSearchView
 )
 
 app_name = 'usuarios'
@@ -17,4 +18,5 @@ urlpatterns = [
     path('user/', CurrentUserView.as_view(), name='current-user'),
     path('csrf/', CSRFTokenView.as_view(), name='csrf'),
     path('profile/<str:username>/', PublicProfileView.as_view(), name='public-profile'),
+    path('search/', UserSearchView.as_view(), name='user-search'),
 ]

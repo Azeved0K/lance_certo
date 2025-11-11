@@ -1,4 +1,4 @@
-from rest_framework import status
+from rest_framework import status, generics, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from momentos.models import Momento
 from momentos.serializers import MomentoListSerializer
 from momentos.views import MomentoPagination
+from rest_framework.pagination import PageNumberPagination
 
 from .serializers import (
     UsuarioSerializer,
@@ -156,3 +157,29 @@ class PublicProfileView(APIView):
         }
 
         return Response(data)
+
+class UserSearchPagination(PageNumberPagination):
+    page_size = 5  # Limita a 5 resultados
+    page_size_query_param = 'page_size'
+    max_page_size = 10
+
+class UserSearchView(generics.ListAPIView):
+    """
+    GET /api/auth/search/?search=...
+    Busca usuários por username
+    """
+    permission_classes = [AllowAny]
+    serializer_class = UsuarioSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['username']  # Busca por username__icontains
+    pagination_class = UserSearchPagination
+
+    def get_queryset(self):
+        return Usuario.objects.all().order_by('username')
+
+    def get_serializer_context(self):
+        # Fornece o 'request' ao serializer
+        # Isso é essencial para o 'get_avatar' (gerar URL) funcionar.
+        context = super(UserSearchView, self).get_serializer_context()
+        context.update({'request': self.request})
+        return context

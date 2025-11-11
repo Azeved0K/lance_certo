@@ -113,7 +113,7 @@ const Header = () => {
                         <form onSubmit={handleSearch} className="searchContainer">
                             <input
                                 type="text"
-                                placeholder="Buscar momentos incriveis..."
+                                placeholder="Buscar..."
                                 className="searchInput"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
