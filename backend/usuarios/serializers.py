@@ -5,8 +5,8 @@ Usuario = get_user_model()
 
 class UsuarioSerializer(serializers.ModelSerializer):
     """Serializer básico do usuário (dados públicos)"""
-    total_momentos = serializers.ReadOnlyField()
-    total_likes_recebidos = serializers.ReadOnlyField()
+    total_momentos = serializers.SerializerMethodField()
+    total_likes_recebidos = serializers.SerializerMethodField() 
     avatar = serializers.SerializerMethodField()
 
     class Meta:
@@ -34,7 +34,37 @@ class UsuarioSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
         # Retorna None se não houver avatar (o frontend usará o fallback da UI-Avatars)
         return None
+    
+    def get_total_momentos(self, obj):
+        """
+        Retorna total de momentos considerando privacidade.
+        Se for o próprio usuário: conta todos
+        Se for outro usuário: conta apenas públicos
+        """
+        request = self.context.get('request')
+        is_owner = request and request.user.is_authenticated and request.user == obj
+        
+        if is_owner:
+            # Dono vê todos os seus vídeos
+            return obj.momentos.count()
+        else:
+            # Outros veem apenas públicos
+            return obj.momentos.filter(is_private=False).count()
 
+    def get_total_likes_recebidos(self, obj):
+        """
+        Retorna total de likes recebidos considerando privacidade.
+        Conta apenas likes de vídeos públicos para outros usuários.
+        """
+        request = self.context.get('request')
+        is_owner = request and request.user.is_authenticated and request.user == obj
+        
+        if is_owner:
+            # Dono vê todas as curtidas
+            return sum(momento.likes.count() for momento in obj.momentos.all())
+        else:
+            # Outros veem apenas curtidas de vídeos públicos
+            return sum(momento.likes.count() for momento in obj.momentos.filter(is_private=False))
 
 class UsuarioCreateSerializer(serializers.ModelSerializer):
     """Serializer para criação de usuário (registro)"""

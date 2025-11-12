@@ -17,7 +17,8 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
     const [editForm, setEditForm] = useState({
         titulo: momento.titulo || '',
         descricao: momento.descricao || '',
-        tags: momento.tags ? momento.tags.map(t => typeof t === 'string' ? t : t.nome).join(', ') : ''
+        tags: momento.tags ? momento.tags.map(t => typeof t === 'string' ? t : t.nome).join(', ') : '',
+        is_private: momento.is_private || false
     });
 
     const isOwner = user && momento.usuario && user.id === momento.usuario.id;
@@ -62,7 +63,8 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
             const updateData = {
                 titulo: editForm.titulo.trim(),
                 descricao: editForm.descricao.trim(),
-                tags: editForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+                tags: editForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
+                is_private: editForm.is_private
             };
             if (!updateData.titulo) {
                 alert('O título não pode estar vazio');
@@ -73,6 +75,7 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
             momento.titulo = updateData.titulo;
             momento.descricao = updateData.descricao;
             momento.tags = updateData.tags.map(nome => ({ nome }));
+            momento.is_private = updateData.is_private;
             alert('Momento atualizado com sucesso! ✅');
             setShowEditModal(false);
             window.location.reload();
@@ -88,7 +91,8 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
         setEditForm({
             titulo: momento.titulo || '',
             descricao: momento.descricao || '',
-            tags: momento.tags ? momento.tags.map(t => typeof t === 'string' ? t : t.nome).join(', ') : ''
+            tags: momento.tags ? momento.tags.map(t => typeof t === 'string' ? t : t.nome).join(', ') : '',
+            is_private: momento.is_private || false
         });
         setShowMenu(false);
         setShowEditModal(true);
@@ -162,6 +166,11 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                         </svg>
                     </div>
                     <div className="duration">{momento.duracao}</div>
+                    {momento.is_private && (
+                        <div className="private-badge">
+                            Privado
+                        </div>
+                    )}
                     {momento.tags && momento.tags.length > 0 && (
                         <div className="tags">
                             {momento.tags.slice(0, 2).map((tag, index) => (
@@ -304,6 +313,37 @@ const MomentoCard = ({ momento, onLike, onDelete }) => {
                                 <input type="text" className="formInput" value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} placeholder="Ex: futebol, gol, brasil" disabled={isEditing} />
                                 <span className="formHint">Separe as tags por vírgula</span>
                             </div>
+
+                            <div className="formGroup" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                borderTop: '1px solid var(--gray-200)',
+                                paddingTop: '1.5rem',
+                                marginBottom: '0.5rem'
+                            }}>
+                                <div>
+                                    <label className="formLabel" style={{ marginBottom: '0' }}>
+                                        🔒 Vídeo Privado
+                                    </label>
+                                    <p className="formHint" style={{ marginTop: '0.375rem' }}>
+                                        Se ativado, apenas você poderá ver este vídeo.
+                                    </p>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={editForm.is_private}
+                                    onChange={(e) => setEditForm({ ...editForm, is_private: e.target.checked })}
+                                    disabled={isEditing}
+                                    style={{
+                                        width: '20px',
+                                        height: '20px',
+                                        accentColor: 'var(--primary-color)',
+                                        cursor: isEditing ? 'not-allowed' : 'pointer'
+                                    }}
+                                />
+                            </div>
+
                             <div className="modalActions">
                                 <button type="button" className="btn btn-outline" onClick={() => setShowEditModal(false)} disabled={isEditing}>Cancelar</button>
                                 <button type="submit" className="btn btn-primary" disabled={isEditing}>

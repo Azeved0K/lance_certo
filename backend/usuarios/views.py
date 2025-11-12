@@ -148,7 +148,7 @@ class PublicProfileView(APIView):
     GET /api/auth/profile/{username}/
     Retorna dados públicos de um usuário e seus momentos
     """
-    permission_classes = [AllowAny]  # Aberto para todos
+    permission_classes = [AllowAny]
 
     def get(self, request, username):
         # 1. Buscar o usuário
@@ -168,11 +168,16 @@ class PublicProfileView(APIView):
         # 2. Buscar e paginar os momentos desse usuário
         pagination = MomentoPagination()
         
-        # Se for privado, e não for o dono, não carrega momentos
         if user.is_private and not is_owner:
+            # Se o perfil é privado e não é o dono, não mostra nada
             momentos_queryset = Momento.objects.none()
         else:
+            # Se o perfil é público OU é o próprio dono vendo
             momentos_queryset = Momento.objects.filter(usuario=user).order_by('-created_at')
+            
+            # NOVO: Se não for o dono, filtrar apenas vídeos públicos
+            if not is_owner:
+                momentos_queryset = momentos_queryset.filter(is_private=False)
 
         # Paginar o queryset
         paginated_momentos = pagination.paginate_queryset(momentos_queryset, request)

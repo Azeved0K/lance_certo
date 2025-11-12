@@ -20,13 +20,13 @@ class ComentarioSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'usuario', 'created_at', 'updated_at']
 
 class MomentoListSerializer(serializers.ModelSerializer):
-    """Serializer para listagem de momentos (mais leve)"""
     usuario = UsuarioSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     total_likes = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     video = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
+    is_private = serializers.BooleanField(read_only=True)  # NOVO
 
     class Meta:
         model = Momento
@@ -42,7 +42,8 @@ class MomentoListSerializer(serializers.ModelSerializer):
             'is_liked',
             'tags',
             'usuario',
-            'created_at'
+            'created_at',
+            'is_private'
         ]
         read_only_fields = ['id', 'views', 'created_at']
 
@@ -83,6 +84,7 @@ class MomentoDetailSerializer(serializers.ModelSerializer):
     comentarios = ComentarioSerializer(many=True, read_only=True)
     video = serializers.SerializerMethodField()
     thumbnail = serializers.SerializerMethodField()
+    is_private = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Momento
@@ -100,7 +102,8 @@ class MomentoDetailSerializer(serializers.ModelSerializer):
             'usuario',
             'comentarios',
             'created_at',
-            'updated_at'
+            'updated_at',
+            'is_private'
         ]
         read_only_fields = ['id', 'usuario', 'views', 'created_at', 'updated_at']
 
@@ -131,36 +134,32 @@ class MomentoDetailSerializer(serializers.ModelSerializer):
         return None
 
 class MomentoCreateSerializer(serializers.ModelSerializer):
-    """Serializer para criação de momento"""
-    # Recebe '["tag1", "tag2"]' como uma string JSON vinda do FormData
     tags = serializers.CharField(
         write_only=True,
         required=False,
-        allow_blank=True  # Permite string vazia
+        allow_blank=True 
     )
+
+    is_private = serializers.BooleanField(required=False, default=False)
 
     class Meta:
         model = Momento
-        fields = ['titulo', 'descricao', 'video', 'thumbnail', 'duracao', 'tags']
+        fields = ['titulo', 'descricao', 'video', 'thumbnail', 'duracao', 'tags', 'is_private']
 
     def create(self, validated_data):
-        tags_json = validated_data.pop('tags', '[]')  # Pega a string JSON
+        tags_json = validated_data.pop('tags', '[]')
         tags_data = []
         try:
-            # Tenta decodificar o JSON string
             tags_data = json.loads(tags_json)
             if not isinstance(tags_data, list):
                 tags_data = []
         except json.JSONDecodeError:
-            # Se falhar (ex: string vazia ou mal formatada), ignora
             tags_data = []
 
-        # Cria o momento com os campos restantes (video, thumbnail, etc.)
         momento = Momento.objects.create(**validated_data)
 
-        # Criar ou buscar tags
         for tag_nome in tags_data:
-            tag_nome = str(tag_nome).strip().lower()  # Garante que é string
+            tag_nome = str(tag_nome).strip().lower()
             if tag_nome:
                 tag, created = Tag.objects.get_or_create(
                     nome=tag_nome,
@@ -180,19 +179,19 @@ class MomentoUpdateSerializer(serializers.ModelSerializer):
         required=False
     )
 
+    is_private = serializers.BooleanField(required=False)
+
     class Meta:
         model = Momento
-        fields = ['titulo', 'descricao', 'thumbnail', 'tags']
+        fields = ['titulo', 'descricao', 'thumbnail', 'tags', 'is_private']
 
     def update(self, instance, validated_data):
         tags_data = validated_data.pop('tags', None)
 
-        # Atualizar campos básicos
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Atualizar tags se fornecidas
         if tags_data is not None:
             instance.tags.clear()
             for tag_nome in tags_data:

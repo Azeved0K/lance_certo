@@ -65,8 +65,10 @@
     border-radius: 4px;
     font-size: 0.75rem;
     font-weight: 600;
+    z-index: 4; /* ⬅️ Z-index menor que o badge privado */
 }
 
+/* Tags - garantir que fiquem no topo esquerdo */
 .tags {
     position: absolute;
     top: 8px;
@@ -74,6 +76,7 @@
     display: flex;
     gap: 4px;
     flex-wrap: wrap;
+    z-index: 5;
 }
 
 .tag {
@@ -97,7 +100,8 @@
     margin-bottom: 0.5rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
-    line-clamp: 2; /* Compatibilidade */
+    line-clamp: 2;
+    /* Compatibilidade */
     -webkit-box-orient: vertical;
     overflow: hidden;
     transition: color 0.2s;
@@ -113,7 +117,8 @@
     margin-bottom: 0.75rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
-    line-clamp: 2; /* Compatibilidade */
+    line-clamp: 2;
+    /* Compatibilidade */
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -537,6 +542,7 @@
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
@@ -692,4 +698,26 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.private-badge {
+    position: absolute;
+    bottom: 44px; /* ⬅️ Acima da duração (8px da duração + 36px de altura) */
+    right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    padding: 0.375rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    z-index: 5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+}
+
+.private-badge svg {
+    flex-shrink: 0;
 }

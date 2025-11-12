@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Count
 from .models import Momento, Tag, Like, Comentario, Notificacao
@@ -35,21 +36,32 @@ class MomentoListCreateView(generics.ListCreateAPIView):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['titulo', 'descricao', 'tags__nome']
     ordering_fields = ['created_at', 'views']
-    pagination_class = MomentoPagination  # Ativa paginação
+    pagination_class = MomentoPagination
 
     def get_queryset(self):
-        # Busca base com prefetch para otimização
         queryset = Momento.objects.select_related('usuario').prefetch_related('tags')
 
-        # LÓGICA DE PRIVACIDADE: Excluir momentos cujo autor é privado, a menos que seja o usuário logado.
+        # LÓGICA DE PRIVACIDADE DE USUÁRIOS (já existente)
         if self.request.user.is_authenticated:
-            # Se logado: mostra todos os públicos E os próprios vídeos (mesmo se privados)
             queryset = queryset.filter(
                 Q(usuario__is_private=False) | Q(usuario=self.request.user)
             ).distinct()
         else:
-            # Se deslogado: mostra apenas os públicos
             queryset = queryset.filter(usuario__is_private=False)
+
+        # LÓGICA DE PRIVACIDADE DE VÍDEOS (com verificação de campo)
+        # Mostrar apenas vídeos públicos OU vídeos privados do próprio usuário
+        try:
+            if self.request.user.is_authenticated:
+                queryset = queryset.filter(
+                    Q(is_private=False) | Q(usuario=self.request.user)
+                ).distinct()
+            else:
+                # Usuários deslogados veem apenas vídeos públicos
+                queryset = queryset.filter(is_private=False)
+        except Exception as e:
+            # Se o campo is_private não existir ainda, ignora o filtro
+            logger.warning(f"Campo is_private não encontrado: {e}")
 
         # Filtrar por tag
         tag = self.request.query_params.get('tag', None)
@@ -77,19 +89,16 @@ class MomentoListCreateView(generics.ListCreateAPIView):
         logger.info(f"📊 Ordenação solicitada: {sort_by}")
 
         if sort_by == 'trending':
-            # EM ALTA = Ordenar por visualizações
             queryset = queryset.order_by('-views', '-created_at')
             logger.info(f"🔥 Ordenando por views (trending/em alta)")
 
         elif sort_by == 'popular':
-            # POPULARES = Ordenar por curtidas (mais curtidas primeiro)
             queryset = queryset.annotate(
                 likes_count=Count('likes', distinct=True)
             ).order_by('-likes_count', '-views', '-created_at')
             logger.info(f"❤️ Ordenando por curtidas (popular)")
 
         else:  # recent (padrão)
-            # Ordenar por data de criação (mais recentes primeiro)
             queryset = queryset.order_by('-created_at')
             logger.info(f"📅 Ordenando por data (recent)")
 
@@ -112,10 +121,19 @@ class MomentoDetailView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_object(self, pk):
-        return get_object_or_404(
+        momento = get_object_or_404(
             Momento.objects.select_related('usuario').prefetch_related('tags', 'comentarios'),
             pk=pk
         )
+        
+        # Isso evita erro se a migration ainda não foi executada
+        if hasattr(momento, 'is_private') and momento.is_private:
+            # Se o vídeo é privado, apenas o dono pode ver
+            if not self.request.user.is_authenticated or self.request.user != momento.usuario:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("Este vídeo é privado")
+        
+        return momento
 
     def get(self, request, pk):
         momento = self.get_object(pk)
@@ -164,6 +182,15 @@ class MomentoIncrementViewView(APIView):
     def post(self, request, pk):
         momento = get_object_or_404(Momento, pk=pk)
 
+        # VERIFICAR PRIVACIDADE: Não permitir incrementar view de vídeo privado
+        if momento.is_private:
+            is_owner = request.user.is_authenticated and request.user == momento.usuario
+            if not is_owner:
+                return Response(
+                    {'error': 'Este vídeo é privado'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
         # Não incrementar se for o dono
         if request.user.is_authenticated and request.user == momento.usuario:
             return Response(
@@ -206,6 +233,14 @@ class MomentoLikeView(APIView):
     def post(self, request, pk):
         momento = get_object_or_404(Momento, pk=pk)
 
+        if momento.is_private:
+            is_owner = request.user.is_authenticated and request.user == momento.usuario
+            if not is_owner:
+                return Response(
+                    {'error': 'Este vídeo é privado'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
         like, created = Like.objects.get_or_create(
             usuario=request.user,
             momento=momento
@@ -242,6 +277,14 @@ class MomentoLikeView(APIView):
 
     def delete(self, request, pk):
         momento = get_object_or_404(Momento, pk=pk)
+
+        if momento.is_private:
+            is_owner = request.user.is_authenticated and request.user == momento.usuario
+            if not is_owner:
+                return Response(
+                    {'error': 'Este vídeo é privado'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         try:
             like = Like.objects.get(usuario=request.user, momento=momento)

@@ -29,6 +29,7 @@ class Momento(models.Model):
     views = models.IntegerField(default=0, verbose_name='Visualizações')
     tags = models.ManyToManyField(Tag, related_name='momentos', blank=True, verbose_name='Tags')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
+    is_private = models.BooleanField(default=False, verbose_name='Vídeo Privado')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
 
     class Meta:

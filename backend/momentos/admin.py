@@ -14,8 +14,8 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(Momento)
 class MomentoAdmin(admin.ModelAdmin):
-    list_display = ['titulo', 'usuario', 'views', 'total_likes', 'total_comentarios', 'created_at']
-    list_filter = ['created_at', 'tags']
+    list_display = ['titulo', 'usuario', 'is_private', 'views', 'total_likes', 'total_comentarios', 'created_at']  # Adicionar is_private
+    list_filter = ['created_at', 'tags', 'is_private']  # Adicionar is_private
     search_fields = ['titulo', 'descricao', 'usuario__username']
     readonly_fields = ['views', 'created_at', 'updated_at', 'total_likes', 'total_comentarios']
     filter_horizontal = ['tags']
@@ -23,7 +23,7 @@ class MomentoAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('usuario', 'titulo', 'descricao')
+            'fields': ('usuario', 'titulo', 'descricao', 'is_private')
         }),
         ('Mídia', {
             'fields': ('video', 'thumbnail', 'duracao')
