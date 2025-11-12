@@ -1,7 +1,6 @@
 # 🎥 Lance Certo — Plataforma Inteligente de Captura e Compartilhamento de Momentos Esportivos
 
 [![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)]()
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)]()
 [![Django](https://img.shields.io/badge/django-5.2-green)]()
 [![React](https://img.shields.io/badge/react-19.1-blue)]()
@@ -27,7 +26,7 @@ Registrar e compartilhar os melhores momentos de uma partida esportiva ainda é 
 ### 💡 Nossa Solução
 
 Uma plataforma web moderna que integra:
-- **Captura Inteligente**: Grave continuamente e salve apenas os últimos 60 segundos ao pressionar um botão
+- **Captura Inteligente**: Grave continuamente e salve apenas os últimos 60 segundos ao pressionar um botão na tela de Captura
 - **Rede Social**: Compartilhe, curta e descubra momentos incríveis de outros atletas
 - **Interface Intuitiva**: Design responsivo e fácil de usar
 - **Baixo Custo**: Funciona com equipamentos acessíveis (notebook + webcam)
@@ -74,35 +73,35 @@ Uma plataforma web moderna que integra:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    FRONTEND (React)                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐│
-│  │   Home   │  │ Capture  │  │  Profile │  │  Video  ││
-│  └──────────┘  └──────────┘  └──────────┘  └─────────┘│
-│         │              │              │            │     │
-│         └──────────────┴──────────────┴────────────┘     │
-│                        │                                 │
-│                    API Client                            │
+│                    FRONTEND (React)                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐  │
+│  │   Home   │  │ Capture  │  │  Profile │  │  Video  │  │
+│  └──────────┘  └──────────┘  └──────────┘  └─────────┘  │
+│         │              │              │            │    │
+│         └──────────────┴──────────────┴────────────┘    │
+│                        │                                │
+│                    API Client                           │
 └─────────────────────────────────────────────────────────┘
                            │
                       HTTPS/REST
                            │
 ┌─────────────────────────────────────────────────────────┐
-│                 BACKEND (Django REST)                    │
-│  ┌──────────────────┐      ┌──────────────────┐        │
+│                 BACKEND (Django REST)                   │
+│  ┌──────────────────┐      ┌──────────────────┐         │
 │  │  Auth Endpoints  │      │ Momentos Endpoints│        │
-│  └──────────────────┘      └──────────────────┘        │
-│           │                         │                    │
-│  ┌────────┴─────────────────────────┴────────┐         │
+│  └──────────────────┘      └──────────────────┘         │
+│           │                         │                   │
+│  ┌────────┴─────────────────────────┴────────┐          │
 │  │         Business Logic Layer               │         │
-│  │  • Serializers  • Views  • Permissions    │         │
-│  └────────┬─────────────────────────┬────────┘         │
-│           │                         │                    │
-│  ┌────────┴────────┐      ┌────────┴────────┐         │
-│  │  User Model     │      │  Momento Model  │         │
-│  │  • Usuario      │      │  • Tags         │         │
-│  │                 │      │  • Likes        │         │
-│  └─────────────────┘      │  • Comentarios  │         │
-│                            └─────────────────┘         │
+│  │  • Serializers  • Views  • Permissions    │          │
+│  └────────┬─────────────────────────┬────────┘          │
+│           │                         │                   │
+│  ┌────────┴────────┐      ┌────────┴────────┐           │
+│  │  User Model     │      │  Momento Model  │           │
+│  │                 │      │  • Likes        │           │
+│  │  • Usuario      │      │  • Tags         │           │
+│  └─────────────────┘      │  • Comentarios  │           │
+│                            └─────────────────┘          │
 └─────────────────────────────────────────────────────────┘
                            │
                       PostgreSQL
@@ -304,44 +303,6 @@ Frontend estará rodando em `http://localhost:5173`
 
 ---
 
-## 📡 API Endpoints
-
-### Autenticação (`/api/auth/`)
-
-| Método | Endpoint | Descrição | Auth |
-|--------|----------|-----------|------|
-| POST | `/register/` | Criar nova conta | Não |
-| POST | `/login/` | Fazer login | Não |
-| POST | `/logout/` | Fazer logout | Sim |
-| GET | `/user/` | Dados do usuário atual | Sim |
-| PATCH | `/user/` | Atualizar perfil | Sim |
-| GET | `/csrf/` | Obter token CSRF | Não |
-
-### Momentos (`/api/momentos/`)
-
-| Método | Endpoint | Descrição | Auth |
-|--------|----------|-----------|------|
-| GET | `/` | Listar momentos (com filtros) | Não |
-| POST | `/` | Criar novo momento | Sim |
-| GET | `/{id}/` | Detalhes de um momento | Não |
-| PATCH | `/{id}/` | Atualizar momento | Sim |
-| DELETE | `/{id}/` | Deletar momento | Sim |
-| POST | `/{id}/like/` | Curtir momento | Sim |
-| DELETE | `/{id}/like/` | Descurtir momento | Sim |
-| POST | `/{id}/view/` | Incrementar visualização | Não |
-| GET | `/{id}/suggestions/` | Sugestões de vídeos | Não |
-| GET | `/{id}/comentarios/` | Listar comentários | Não |
-| POST | `/{id}/comentarios/` | Criar comentário | Sim |
-| DELETE | `/comentarios/{id}/` | Deletar comentário | Sim |
-
-### Tags (`/api/momentos/tags/`)
-
-| Método | Endpoint | Descrição | Auth |
-|--------|----------|-----------|------|
-| GET | `/` | Listar todas as tags | Não |
-
----
-
 ## 🎨 Design System
 
 ### Paleta de Cores
@@ -377,24 +338,24 @@ O projeto segue uma abordagem experimental de pesquisa aplicada:
 
 | Fase | Período | Status |
 |------|---------|--------|
-| Planejamento e Revisão Teórica | Jan-Abr/2025 | ✅ Concluído |
-| Desenvolvimento do Protótipo | Mai-Out/2025 | 🚧 Em progresso |
+| Planejamento e Revisão Teórica | Ago-Set/2025 | ✅ Concluído |
+| Desenvolvimento do Protótipo | Set-Nov/2025 | ✅ Concluído |
 | Testes e Validação | Nov-Dez/2025 | 🚧 Em progresso |
-| Integração com LARCC | Nov-Dez/2025 | ⏳ A iniciar |
+| Integração com LARCC | Nov-Dez/2025 | 🚧 Em progresso |
 
 ---
 
 ## 💡 Funcionalidades Futuras
 
 ### Em Desenvolvimento
-- 🔄 Edição básica de vídeos (corte, filtros)
+- 🔄 Edição básica de vídeos (corte, exportação)
 - 📊 Dashboard com analytics detalhados
 - 🔔 Sistema de notificações em tempo real
-- 🎯 Sistema de campeonatos, reservas e torneios
 
 ### Planejadas
 - 🤖 Detecção automática de momentos importantes (IA)
 - 🏆 Sistema de conquistas e gamificação
+- 🎯 Sistema de campeonatos, reservas e torneios
 - 👥 Equipes e organizações
 - 💬 Chat em tempo real
 - 🌍 Múltiplos idiomas
@@ -447,12 +408,7 @@ Acesse: [`/docs/Projeto_Interdisciplinar_II.pdf`](./docs/Projeto_Interdisciplina
 - **SETREM** - Sociedade Educacional Três de Maio
 - **LARCC** - Laboratory of Advanced Research on Cloud Computing
 
----
-
-## 📜 Licença
-
-Este projeto está licenciado sob a **MIT License** para fins de aprendizado e pesquisa acadêmica.
-
+--
 ### ⚠️ Termos de Uso
 
 - ✅ Uso pessoal e educacional
@@ -460,37 +416,6 @@ Este projeto está licenciado sob a **MIT License** para fins de aprendizado e p
 - ✅ Testes e experimentos
 - ❌ Uso comercial sem autorização
 - ❌ Captura automatizada em larga escala
-
----
-
-## 🤝 Como Contribuir
-
-Contribuições são bem-vindas! Para contribuir:
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona MinhaFeature'`)
-4. Push para a branch (`git push origin feature/MinhaFeature`)
-5. Abra um Pull Request
-
-### 📝 Guidelines de Contribuição
-
-- Siga os padrões de código existentes
-- Adicione testes para novas funcionalidades
-- Atualize a documentação quando necessário
-- Escreva mensagens de commit descritivas
-
----
-
-## 🐛 Reportar Bugs
-
-Encontrou um bug? Por favor, abra uma [issue](https://github.com/Azeved0K/lance-certo/issues) com:
-
-- Descrição clara do problema
-- Passos para reproduzir
-- Comportamento esperado vs atual
-- Screenshots (se aplicável)
-- Informações do ambiente (SO, navegador, versões)
 
 ---
 
