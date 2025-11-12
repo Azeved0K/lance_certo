@@ -114,7 +114,7 @@ Uma plataforma web moderna que integra:
 - **React Router 7** - Roteamento SPA
 - **Axios** - Cliente HTTP
 - **Vite** - Build tool e dev server
-- **CSS Modules** - Estilização modular
+- **CSS** - Estilização
 
 #### Backend
 - **Django 5.2** - Framework web
@@ -224,7 +224,7 @@ lance-certo/
 
 1. **Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/lance-certo.git
+git clone https://github.com/Azeved0k/lance-certo.git
 cd lance-certo/backend
 ```
 
@@ -384,18 +384,6 @@ O projeto segue uma abordagem experimental de pesquisa aplicada:
 
 ---
 
-## 📚 Documentação Técnica
-
-Para informações detalhadas sobre:
-- Estruturas de dados (buffer circular)
-- Pipeline de vídeo (OpenCV + FFmpeg)
-- Métodos de coleta e análise de dados
-- Métricas de desempenho e testes de usabilidade
-
-Acesse: [`/docs/Projeto_Interdisciplinar_II.pdf`](./docs/Projeto_Interdisciplinar_II.pdf)
-
----
-
 ## 👥 Equipe
 
 | Nome | Função | Contato |
@@ -423,8 +411,7 @@ Acesse: [`/docs/Projeto_Interdisciplinar_II.pdf`](./docs/Projeto_Interdisciplina
 
 - 📘 [Documentação Django](https://docs.djangoproject.com/)
 - ⚛️ [Documentação React](https://react.dev/)
-- 🎨 [Design System](https://www.figma.com/...)
-- 📊 [Roadmap do Projeto](https://github.com/...)
+- 📊 [Roadmap do Projeto](https://github.com/Azeved0K/lance_certo)
 
 ---
 

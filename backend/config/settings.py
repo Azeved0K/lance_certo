@@ -27,7 +27,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # CORS - antes do CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -37,19 +37,20 @@ MIDDLEWARE = [
 
 # Configurações de CORS
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
-CORS_ALLOW_CREDENTIALS = True  # Importante para sessões/cookies
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True  # Apenas para dev!
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = ['http://localhost:5173']
 CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_HTTPONLY = False  # Frontend precisa ler
-CSRF_COOKIE_SECURE = False  # True apenas em HTTPS (produção)
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = False
 
 # Sessões
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False  # True em produção
-SESSION_COOKIE_AGE = 86400  # 24 horas
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_AGE = 86400
 
 ROOT_URLCONF = 'config.urls'
 
@@ -68,8 +69,8 @@ DATABASES = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [], # Aqui você pode adicionar caminhos para seus templates se necessário
-        'APP_DIRS': True, # Isso permite que o Django encontre os templates dentro dos apps, como o Admin
+        'DIRS': [],
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -106,7 +107,22 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CORS_ALLOW_ALL_ORIGINS = True  # Apenas para dev!
+# ============================================================================
+# CONFIGURAÇÕES DE UPLOAD (25MB)
+# ============================================================================
+DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400  # 25MB + margem
+FILE_UPLOAD_MAX_MEMORY_SIZE = 26214400  # 25MB + margem
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
+
+# Permissões de arquivos
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
+
+# Handlers de upload
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -135,7 +151,7 @@ LOGGING = {
         'level': 'INFO',
     },
     'loggers': {
-        'momentos': {  # Nome do seu app
+        'momentos': {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,

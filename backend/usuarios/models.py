@@ -1,9 +1,17 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from momentos.validators import validate_avatar_size, validate_avatar_format
 
 class Usuario(AbstractUser):
     email = models.EmailField(unique=True, verbose_name='E-mail')
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, verbose_name='Avatar')
+    avatar = models.ImageField(
+        upload_to='avatars/', 
+        null=True, 
+        blank=True, 
+        verbose_name='Avatar',
+        validators=[validate_avatar_size, validate_avatar_format],
+        help_text='Imagem de perfil (máximo 25MB)'
+    )
     bio = models.TextField(max_length=500, blank=True, verbose_name='Biografia')
     data_nascimento = models.DateField(null=True, blank=True, verbose_name='Data de Nascimento')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
@@ -11,14 +19,14 @@ class Usuario(AbstractUser):
     is_private = models.BooleanField(default=False, verbose_name='Perfil Privado')
     groups = models.ManyToManyField(
         'auth.Group',
-        related_name='usuario_set', # Nome único para os grupos
+        related_name='usuario_set',
         blank=True,
         help_text='The groups this user belongs to.'
     )
 
     user_permissions = models.ManyToManyField(
         'auth.Permission',
-        related_name='usuario_permissions', # Nome único para as permissões
+        related_name='usuario_permissions',
         blank=True,
         help_text='Specific permissions for this user.'
     )

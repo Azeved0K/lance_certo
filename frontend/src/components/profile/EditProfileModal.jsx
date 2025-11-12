@@ -1,4 +1,3 @@
-// content of frontend/src/components/profile/EditProfileModal.jsx
 import { useState, useRef } from 'react';
 import '../../styles/components/EditProfileModal.css';
 
@@ -8,7 +7,7 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
         last_name: user?.last_name || '',
         bio: user?.bio || '',
         data_nascimento: user?.data_nascimento || '',
-        is_private: user?.is_private || false, // <-- NOVO: Inicializa
+        is_private: user?.is_private || false,
         avatar: null
     });
     const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
@@ -17,7 +16,7 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
     const fileInputRef = useRef(null);
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target; // <-- TRATA CHECKBOX
+        const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
@@ -32,9 +31,9 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
     const handleAvatarChange = (e) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Validar tamanho (máx 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                setError('A imagem deve ter no máximo 5MB');
+            // ✅ ATUALIZADO: Validar tamanho (máx 25MB ao invés de 5MB)
+            if (file.size > 25 * 1024 * 1024) {
+                setError('A imagem deve ter no máximo 25MB');
                 return;
             }
 
@@ -87,10 +86,8 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
 
             // Adicionar campo de privacidade
             if (formData.is_private !== user?.is_private) {
-                // Envia como string 'true' ou 'false' para ser interpretado pelo DRF
                 updateData.append('is_private', formData.is_private.toString());
             }
-
 
             // Adicionar avatar se foi alterado
             if (formData.avatar instanceof File) {
@@ -185,7 +182,8 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
                                 </button>
                             )}
                         </div>
-                        <p className="avatar-hint">JPG, PNG ou GIF. Máximo 5MB.</p>
+                        {/* ✅ ATUALIZADO: Mensagem com novo limite */}
+                        <p className="avatar-hint">JPG, PNG ou GIF. Máximo 25MB.</p>
                     </div>
 
                     {/* Nome e Sobrenome */}
@@ -254,7 +252,7 @@ const EditProfileModal = ({ user, isOpen, onClose, onSave }) => {
                         <p className="form-hint">Esta informação não será exibida publicamente</p>
                     </div>
 
-                    {/* Perfil Privado Toggle - NOVO BLOCO */}
+                    {/* Perfil Privado Toggle */}
                     <div className="form-group" style={{
                         display: 'flex',
                         alignItems: 'center',
