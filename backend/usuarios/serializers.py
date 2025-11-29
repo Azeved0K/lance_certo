@@ -62,11 +62,11 @@ class UsuarioCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Usuario
-        fields = ['first_name', 'last_name', 'avatar', 'bio', 'data_nascimento', 'is_private']
+        fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name', 'avatar', 'bio', 'data_nascimento', 'is_private']
 
     def validate(self, data):
         """Validação customizada"""
-        if data['password'] != data['password2']:
+        if data.get('password') != data.get('password2'):
             raise serializers.ValidationError({'password': 'As senhas não coincidem'})
         return data
 
