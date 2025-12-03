@@ -7,7 +7,7 @@
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.x-red)]()
 
 > **Projeto Interdisciplinar de Extensão II — SETREM**  
-> Desenvolvido por alunos de Engenharia de Computação com apoio do LARCC
+> Desenvolvido por alunos de Engenharia de Computação.
 
 ---
 
@@ -88,11 +88,11 @@ Uma plataforma web moderna que integra:
 ┌─────────────────────────────────────────────────────────┐
 │                 BACKEND (Django REST)                   │
 │  ┌──────────────────┐      ┌──────────────────┐         │
-│  │  Auth Endpoints  │      │ Momentos Endpoints│        │
+│  │  Auth Endpoints  │      │Momentos Endpoints│         │
 │  └──────────────────┘      └──────────────────┘         │
 │           │                         │                   │
 │  ┌────────┴─────────────────────────┴────────┐          │
-│  │         Business Logic Layer               │         │
+│  │         Business Logic Layer              │          │
 │  │  • Serializers  • Views  • Permissions    │          │
 │  └────────┬─────────────────────────┬────────┘          │
 │           │                         │                   │
@@ -100,8 +100,8 @@ Uma plataforma web moderna que integra:
 │  │  User Model     │      │  Momento Model  │           │
 │  │                 │      │  • Likes        │           │
 │  │  • Usuario      │      │  • Tags         │           │
-│  └─────────────────┘      │  • Comentarios  │           │
-│                            └─────────────────┘          │
+│  └─────────────────┘      │  • Notificações │           │
+│                           └─────────────────┘           │
 └─────────────────────────────────────────────────────────┘
                            │
                       PostgreSQL
@@ -332,7 +332,6 @@ O projeto segue uma abordagem experimental de pesquisa aplicada:
 1. **Desenvolvimento Iterativo** → Protótipos e testes incrementais
 2. **Testes de Usabilidade** → Feedback com usuários reais
 3. **Análise de Desempenho** → Métricas de latência e estabilidade
-4. **Integração com LARCC** → Testes em infraestrutura avançada
 
 ### Fases do Projeto
 
@@ -341,7 +340,6 @@ O projeto segue uma abordagem experimental de pesquisa aplicada:
 | Planejamento e Revisão Teórica | Ago-Set/2025 | ✅ Concluído |
 | Desenvolvimento do Protótipo | Set-Nov/2025 | ✅ Concluído |
 | Testes e Validação | Nov-Dez/2025 | 🚧 Em progresso |
-| Integração com LARCC | Nov-Dez/2025 | 🚧 Em progresso |
 
 ---
 
@@ -394,7 +392,6 @@ O projeto segue uma abordagem experimental de pesquisa aplicada:
 
 ### Orientação e Apoio
 - **SETREM** - Sociedade Educacional Três de Maio
-- **LARCC** - Laboratory of Advanced Research on Cloud Computing
 
 --
 ### ⚠️ Termos de Uso
@@ -429,7 +426,6 @@ O projeto segue uma abordagem experimental de pesquisa aplicada:
 Este projeto conta com o apoio de:
 
 - **SETREM** - Pela estrutura e suporte institucional
-- **LARCC** - Pelo acesso à infraestrutura de testes
 - **Professores Orientadores** - Pelo conhecimento compartilhado
 - **Atletas Testadores** - Pelo feedback valioso
 

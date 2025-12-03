@@ -57,7 +57,7 @@ const Register = () => {
             <div className="authCard">
                 {/* Logo */}
                 <div className="authHeader">
-                    <div className="authLogo" style={{ background: 'linear-gradient(135deg, var(--secondary-color), #059669)' }}>
+                   <div className="authLogo">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
                             <path d="M23 7l-7 5 7 5V7z" fill="currentColor" />
                             <rect x="1" y="5" width="15" height="14" rx="2" fill="currentColor" />
