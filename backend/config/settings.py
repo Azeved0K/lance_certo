@@ -14,12 +14,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Third party
     'rest_framework',
     'corsheaders',
-    
-    # Apps locais
     'usuarios',
     'momentos',
 ]
@@ -107,9 +103,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# ============================================================================
-# CONFIGURAÇÕES DE UPLOAD (25MB)
-# ============================================================================
+# Configurações de upload de imagem (25MB)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400  # 25MB + margem
 FILE_UPLOAD_MAX_MEMORY_SIZE = 26214400  # 25MB + margem
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
@@ -158,3 +152,12 @@ LOGGING = {
         },
     },
 }
+
+# configuração de email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config('MY_EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('MY_EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('MY_EMAIL', default='')
+EMAIL_HOST_PASSWORD = config('MY_EMAIL_PASS', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER or 'no-reply@lancecerto.com')

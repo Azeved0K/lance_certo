@@ -3,6 +3,7 @@ import { authService } from '../services/api';
 
 const AuthContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
@@ -29,7 +30,7 @@ export const AuthProvider = ({ children }) => {
             setUser(response.data);
             console.log('Usuario autenticado:', response.data);
         } catch (error) {
-            console.log('Usuario nao autenticado');
+            console.log('Usuario não autenticado');
             setUser(null);
         } finally {
             setLoading(false);
@@ -38,6 +39,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (credentials) => {
         try {
+            await authService.getCsrfToken();
             const response = await authService.login(credentials);
             setUser(response.data.user);
             console.log('Login bem-sucedido:', response.data.user);
@@ -53,6 +55,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (userData) => {
         try {
+            await authService.getCsrfToken();
             await authService.register(userData);
             return { success: true };
         } catch (error) {

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services/api';
+import { useNavigate, Link } from 'react-router-dom';
 import '../styles/pages/Auth.css';
 
 const Login = () => {
-    const navigate = useNavigate();
     const { login } = useAuth();
+    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
         username: '',
@@ -13,6 +14,21 @@ const Login = () => {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+    const [resetLoading, setResetLoading] = useState(false);
+    const [resetMessage, setResetMessage] = useState('');
+
+    // Etapas adicionais: inserir código e redefinir senha
+    const [showCodeModal, setShowCodeModal] = useState(false);
+    const [code, setCode] = useState('');
+    const [codeLoading, setCodeLoading] = useState(false);
+    const [codeError, setCodeError] = useState('');
+
+    const [showNewPasswordModal, setShowNewPasswordModal] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [newPasswordLoading, setNewPasswordLoading] = useState(false);
+    const [newPasswordMessage, setNewPasswordMessage] = useState('');
 
     const handleChange = (e) => {
         setFormData({
@@ -36,6 +52,64 @@ const Login = () => {
         }
 
         setLoading(false);
+    };
+
+    const handleSendResetCode = async (e) => {
+        e.preventDefault();
+        setResetLoading(true);
+        setResetMessage('');
+        try {
+            await authService.sendPasswordResetCode(resetEmail);
+            setResetMessage('Código de restauração enviado para o email informado.');
+            // Avança para modal de inserir código
+            setShowResetModal(false);
+            setShowCodeModal(true);
+        } catch (err) {
+            setResetMessage('Erro ao enviar código. Verifique o email informado.');
+            const serverMessage = err?.response?.data?.error || 'Erro ao enviar código. Verifique o email informado.';
+            setResetMessage(serverMessage);
+        }
+        setResetLoading(false);
+    };
+
+    const handleVerifyCode = async (e) => {
+        e.preventDefault();
+        setCodeLoading(true);
+        setCodeError('');
+        try {
+            await authService.verifyPasswordResetCode(resetEmail, code);
+            // Código válido: abrir modal para nova senha
+            setShowCodeModal(false);
+            setShowNewPasswordModal(true);
+        } catch (err) {
+            const serverMessage = err?.response?.data?.error || 'Código inválido.';
+            setCodeError(serverMessage);
+        } finally {
+            setCodeLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        setNewPasswordLoading(true);
+        setNewPasswordMessage('');
+        try {
+            await authService.resetPassword(resetEmail, code, newPassword);
+            setNewPasswordMessage('Senha redefinida com sucesso. Faça login com a nova senha.');
+            // Fecha todos os modais após sucesso
+            setShowNewPasswordModal(false);
+            setShowResetModal(false);
+            setShowCodeModal(false);
+            // opcional: limpar campos
+            setResetEmail('');
+            setCode('');
+            setNewPassword('');
+        } catch (err) {
+            const serverMessage = err?.response?.data?.error || 'Erro ao redefinir senha.';
+            setNewPasswordMessage(serverMessage);
+        } finally {
+            setNewPasswordLoading(false);
+        }
     };
 
     return (
@@ -110,9 +184,9 @@ const Login = () => {
                             <input type="checkbox" />
                             <span>Lembrar-me</span>
                         </label>
-                        <Link to="/forgot-password" className="forgotLink">
+                        <a href="#" className="forgotLink" onClick={(e) => { e.preventDefault(); setShowResetModal(true); }}>
                             Esqueci minha senha
-                        </Link>
+                        </a>
                     </div>
 
                     <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
@@ -146,9 +220,105 @@ const Login = () => {
 
                 {/* Register Link */}
                 <p className="authFooter">
-                    Nao tem uma conta? <Link to="/register" className="authLink">Cadastre-se gratis</Link>
+                    Não tem uma conta? <Link to="/register" className="authLink">Cadastre-se grátis</Link>
                 </p>
             </div>
+
+            {/* Reset Password Modal */}
+            {showResetModal && (
+                <div className="modal" onClick={() => !resetLoading && setShowResetModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Recuperar Senha</h2>
+                            <button onClick={() => setShowResetModal(false)} className="modal-close" disabled={resetLoading}>×</button>
+                        </div>
+                        <form onSubmit={handleSendResetCode} className="modal-form">
+                            <div className="input-group">
+                                <label className="input-label">Informe seu email cadastrado</label>
+                                <input
+                                    type="email"
+                                    value={resetEmail}
+                                    onChange={e => setResetEmail(e.target.value)}
+                                    required
+                                    className="input-field"
+                                    disabled={resetLoading}
+                                />
+                            </div>
+                            {resetMessage && <div className="infoAlert">{resetMessage}</div>}
+                            <div className="modal-actions">
+                                <button type="button" onClick={() => setShowResetModal(false)} className="btn btn-outline" disabled={resetLoading}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary" disabled={resetLoading}>
+                                    {resetLoading ? 'Enviando...' : 'Enviar código'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Code Verification Modal */}
+            {showCodeModal && (
+                <div className="modal" onClick={() => !codeLoading && setShowCodeModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Informe o código</h2>
+                            <button onClick={() => setShowCodeModal(false)} className="modal-close" disabled={codeLoading}>×</button>
+                        </div>
+                        <form onSubmit={handleVerifyCode} className="modal-form">
+                            <div className="input-group">
+                                <label className="input-label">Código recebido por e-mail</label>
+                                <input
+                                    type="text"
+                                    value={code}
+                                    onChange={e => setCode(e.target.value)}
+                                    required
+                                    className="input-field"
+                                    disabled={codeLoading}
+                                />
+                            </div>
+                            {codeError && <div className="errorAlert">{codeError}</div>}
+                            <div className="modal-actions">
+                                <button type="button" onClick={() => setShowCodeModal(false)} className="btn btn-outline" disabled={codeLoading}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary" disabled={codeLoading}>
+                                    {codeLoading ? 'Verificando...' : 'Verificar código'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* New Password Modal */}
+            {showNewPasswordModal && (
+                <div className="modal" onClick={() => !newPasswordLoading && setShowNewPasswordModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">Redefinir Senha</h2>
+                            <button onClick={() => setShowNewPasswordModal(false)} className="modal-close" disabled={newPasswordLoading}>×</button>
+                        </div>
+                        <form onSubmit={handleResetPassword} className="modal-form">
+                            <div className="input-group">
+                                <label className="input-label">Nova senha</label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={e => setNewPassword(e.target.value)}
+                                    required
+                                    className="input-field"
+                                    disabled={newPasswordLoading}
+                                />
+                            </div>
+                            {newPasswordMessage && <div className="infoAlert">{newPasswordMessage}</div>}
+                            <div className="modal-actions">
+                                <button type="button" onClick={() => setShowNewPasswordModal(false)} className="btn btn-outline" disabled={newPasswordLoading}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary" disabled={newPasswordLoading}>
+                                    {newPasswordLoading ? 'Salvando...' : 'Redefinir senha'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

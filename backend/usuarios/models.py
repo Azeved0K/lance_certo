@@ -17,6 +17,10 @@ class Usuario(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Atualizado em')
     is_private = models.BooleanField(default=False, verbose_name='Perfil Privado')
+    password_reset_code = models.CharField(max_length=10, blank=True, null=True)
+    password_reset_sent_at = models.DateTimeField(null=True, blank=True)
+    password_reset_attempts = models.IntegerField(default=0)
+
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='usuario_set',

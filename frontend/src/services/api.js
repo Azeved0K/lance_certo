@@ -17,6 +17,29 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+api.interceptors.response.use(
+    response => response,
+    async (error) => {
+        const originalRequest = error.config;
+        if (
+            error.response &&
+            error.response.status === 403 &&
+            originalRequest &&
+            !originalRequest.__isRetry &&
+            originalRequest.method && originalRequest.method.toLowerCase() === 'post'
+        ) {
+            try {
+                await api.get('/auth/csrf/');
+                originalRequest.__isRetry = true;
+                return api.request(originalRequest);
+            } catch (e) {
+                return Promise.reject(error);
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -32,15 +55,36 @@ function getCookie(name) {
     return cookieValue;
 }
 
+async function ensureCsrf() {
+    try {
+        const resp = await api.get('/auth/csrf/');
+        const token = resp?.data?.csrfToken;
+        if (token) {
+            api.defaults.headers['X-CSRFToken'] = token;
+        }
+    } catch (e) {
+        /* ignora */
+    }
+}
+
 // Funções de autenticação
 export const authService = {
-    login: (credentials) => api.post('/auth/login/', credentials),
+    login: async (credentials) => {
+        await ensureCsrf();
+        return api.post('/auth/login/', credentials);
+    },
     logout: () => api.post('/auth/logout/'),
-    register: (userData) => api.post('/auth/register/', userData),
+    register: async (userData) => {
+        await ensureCsrf();
+        return api.post('/auth/register/', userData);
+    },
     getCurrentUser: () => api.get('/auth/user/'),
     getCsrfToken: () => api.get('/auth/csrf/'),
     getPublicProfile: (username) => api.get(`/auth/profile/${username}/`),
     searchUsers: (query) => api.get(`/auth/search/`, { params: { search: query } }),
+    sendPasswordResetCode: async (email) => { await ensureCsrf(); return api.post('/auth/password-reset-code/', { email }); },
+    verifyPasswordResetCode: async (email, code) => { await ensureCsrf(); return api.post('/auth/password-reset-verify/', { email, code }); },
+    resetPassword: async (email, code, new_password) => { await ensureCsrf(); return api.post('/auth/password-reset/', { email, code, new_password }); },
 };
 
 // Funções de momentos

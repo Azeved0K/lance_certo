@@ -6,7 +6,10 @@ from .views import (
     CurrentUserView,
     CSRFTokenView,
     PublicProfileView,
-    UserSearchView
+    UserSearchView,
+    SendPasswordResetCodeView,
+    VerifyPasswordResetCodeView,
+    ResetPasswordView,
 )
 
 app_name = 'usuarios'
@@ -19,4 +22,7 @@ urlpatterns = [
     path('csrf/', CSRFTokenView.as_view(), name='csrf'),
     path('profile/<str:username>/', PublicProfileView.as_view(), name='public-profile'),
     path('search/', UserSearchView.as_view(), name='user-search'),
+    path('password-reset-code/', SendPasswordResetCodeView.as_view(), name='password-reset-code'),
+    path('password-reset-verify/', VerifyPasswordResetCodeView.as_view(), name='password-reset-verify'),
+    path('password-reset/', ResetPasswordView.as_view(), name='password-reset'),
 ]

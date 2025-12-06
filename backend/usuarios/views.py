@@ -11,6 +11,8 @@ from momentos.models import Momento
 from momentos.serializers import MomentoListSerializer
 from momentos.views import MomentoPagination
 from rest_framework.pagination import PageNumberPagination
+from .enviar_email import send_password_reset_email
+import random
 
 from .serializers import (
     UsuarioSerializer,
@@ -106,7 +108,6 @@ class CurrentUserView(APIView):
         # Cria uma cópia mutável dos dados da requisição para manipulação segura
         data_copy = request.data.copy()
 
-        # --- CORREÇÃO ROBUSTA DE PERSISTÊNCIA DE BOOLEANOS ---
         if 'is_private' in data_copy:
             is_private_value = data_copy['is_private']
             
@@ -119,11 +120,10 @@ class CurrentUserView(APIView):
                 elif is_private_str == 'false':
                     data_copy['is_private'] = False
                 # Para qualquer outra string, o serializer fará a validação
-        # --- FIM CORREÇÃO DE PERSISTÊNCIA DE BOOLEANOS ---
 
         serializer = UsuarioUpdateSerializer(
             request.user,
-            data=data_copy, # Passa a cópia com o booleano corrigido
+            data=data_copy, # Passa a cópia com o booleano
             partial=True
         )
         if serializer.is_valid():
@@ -175,7 +175,7 @@ class PublicProfileView(APIView):
             # Se o perfil é público OU é o próprio dono vendo
             momentos_queryset = Momento.objects.filter(usuario=user).order_by('-created_at')
             
-            # NOVO: Se não for o dono, filtrar apenas vídeos públicos
+            # Se não for o dono, filtrar apenas vídeos públicos
             if not is_owner:
                 momentos_queryset = momentos_queryset.filter(is_private=False)
 
@@ -223,3 +223,128 @@ class UserSearchView(generics.ListAPIView):
         context = super(UserSearchView, self).get_serializer_context()
         context.update({'request': self.request})
         return context
+
+class SendPasswordResetCodeView(APIView):
+    """
+    POST /api/auth/password-reset-code/
+    Envia um código de recuperação de senha para o email do usuário
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email é obrigatório.'}, status=status.HTTP_400_BAD_REQUEST)
+        User = get_user_model()
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'Email não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+        # Gerar código simples
+        code = str(random.randint(100000, 999999))
+        # Salvar código no usuário (campo temporário)
+        user.password_reset_code = code
+        # Registrar timestamp de envio e resetar contador de tentativas
+        from django.utils import timezone
+        user.password_reset_sent_at = timezone.now()
+        user.password_reset_attempts = 0
+        user.save()
+        # Enviar email usando utilitário centralizado
+        try:
+            send_password_reset_email(email, code, username=getattr(user, 'username', None))
+        except Exception as e:
+            # Logando erro para debugar
+            print('Erro ao enviar email de recuperação:', e)
+            return Response({'error': 'Erro ao enviar código. Verifique o email informado.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({'message': 'Código enviado para o email.'}, status=status.HTTP_200_OK)
+
+class VerifyPasswordResetCodeView(APIView):
+    """
+    POST /api/auth/password-reset-verify/
+    Verifica se um código de recuperação corresponde ao email informado.
+    Body esperado: { email, code }
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        if not email or not code:
+            return Response({'error': 'Email e código são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        User = get_user_model()
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'Email não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not getattr(user, 'password_reset_code', None):
+            return Response({'error': 'Nenhum código registrado para este usuário.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Checar expiração: 10 minutos
+        from django.utils import timezone
+        sent_at = getattr(user, 'password_reset_sent_at', None)
+        if not sent_at:
+            return Response({'error': 'Timestamp do código ausente.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        elapsed = timezone.now() - sent_at
+        if elapsed.total_seconds() > 10 * 60:
+            # Código expirado: limpar campos
+            user.password_reset_code = None
+            user.password_reset_sent_at = None
+            user.password_reset_attempts = 0
+            user.save()
+            return Response({'error': 'Código expirado. Solicite um novo código.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Checar número de tentativas
+        if getattr(user, 'password_reset_attempts', 0) >= 5:
+            return Response({'error': 'Número máximo de tentativas excedido. Solicite novo código.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if str(user.password_reset_code) != str(code):
+            # Incrementar tentativas
+            user.password_reset_attempts = getattr(user, 'password_reset_attempts', 0) + 1
+            user.save()
+            remaining = max(0, 5 - user.password_reset_attempts)
+            return Response({'error': f'Código inválido. Tentativas restantes: {remaining}.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Sucesso: código válido -> resetar contador para segurança
+        user.password_reset_attempts = 0
+        user.save()
+        return Response({'message': 'Código válido.'}, status=status.HTTP_200_OK)
+
+
+class ResetPasswordView(APIView):
+    """
+    POST /api/auth/password-reset/
+    Redefine a senha do usuário usando email + code + new_password.
+    Body esperado: { email, code, new_password }
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        new_password = request.data.get('new_password')
+
+        if not email or not code or not new_password:
+            return Response({'error': 'Email, código e nova senha são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        User = get_user_model()
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'Email não encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if str(user.password_reset_code) != str(code):
+            return Response({'error': 'Código inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Efetuar reset de senha
+        user.set_password(new_password)
+        # Limpar o código e metadados
+        user.password_reset_code = None
+        user.password_reset_sent_at = None
+        user.password_reset_attempts = 0
+        user.save()
+
+        return Response({'message': 'Senha redefinida com sucesso.'}, status=status.HTTP_200_OK)
