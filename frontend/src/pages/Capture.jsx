@@ -55,7 +55,7 @@ const generateThumbnail = (videoBlob) => {
                 reject(new Error('Erro ao carregar vídeo'));
             };
 
-            video.play().catch(e => {
+            video.play().catch(() => {
                 // Play é necessário em alguns browsers para buscar frames
             });
 
@@ -90,6 +90,7 @@ const Capture = ({ user, onLogout }) => {
         is_private: false
     });
     const [isUploading, setIsUploading] = useState(false);
+    const [publishingIndex, setPublishingIndex] = useState(0);
 
     const BUFFER_DURATION = 60000; // 60 segundos
     const CHUNK_DURATION = 1000; // 1 segundo por chunk
@@ -271,16 +272,20 @@ const Capture = ({ user, onLogout }) => {
         setSelectedClips(prev => prev.filter(id => id !== clipId));
     };
 
+    // Função para obter a ordem de seleção do clipe
+    const getClipOrder = (clipId) => {
+        const idx = selectedClips.indexOf(clipId);
+        return idx !== -1 ? idx + 1 : null;
+    };
+
     // Publicar clipes selecionados
     const handlePublishSelected = () => {
         if (selectedClips.length === 0) {
             alert('Selecione pelo menos um clipe para publicar');
             return;
         }
-
-        // Pegar primeiro clipe selecionado para publicar
+        setPublishingIndex(0);
         const clipToPublish = clips.find(c => c.id === selectedClips[0]);
-
         if (clipToPublish) {
             setCurrentClipData(clipToPublish);
             setShowUploadModal(true);
@@ -344,14 +349,24 @@ const Capture = ({ user, onLogout }) => {
             }
 
             // Resetar tudo
-            setClips([]);
-            setSelectedClips([]);
-            setShowUploadModal(false);
-            setShowClipsManager(false);
-            setCurrentClipData(null);
-            setUploadData({ titulo: '', descricao: '', tags: '' });
-
-            navigate('/');
+            // Avançar para o próximo clipe selecionado
+            const nextIndex = publishingIndex + 1;
+            if (nextIndex < selectedClips.length) {
+                setPublishingIndex(nextIndex);
+                const nextClip = clips.find(c => c.id === selectedClips[nextIndex]);
+                setCurrentClipData(nextClip);
+                setUploadData({ titulo: '', descricao: '', tags: '', is_private: false });
+                // Modal permanece aberto
+            } else {
+                // Finalizou todos
+                setClips([]);
+                setSelectedClips([]);
+                setShowUploadModal(false);
+                setShowClipsManager(false);
+                setCurrentClipData(null);
+                setPublishingIndex(0);
+                navigate('/');
+            }
         } catch (error) {
             console.error('Erro ao enviar:', error);
             alert('❌ Erro ao publicar momento: ' + (error.response?.data?.message || error.message));
@@ -509,7 +524,9 @@ const Capture = ({ user, onLogout }) => {
                                                 onClick={() => toggleClipSelection(clip.id)}
                                                 className={`btn-select ${selectedClips.includes(clip.id) ? 'selected' : ''}`}
                                             >
-                                                {selectedClips.includes(clip.id) ? '✓ Selecionado' : 'Selecionar'}
+                                                {selectedClips.includes(clip.id)
+                                                    ? `${getClipOrder(clip.id)} - Selecionado`
+                                                    : 'Selecionar'}
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteClip(clip.id)}
@@ -551,7 +568,11 @@ const Capture = ({ user, onLogout }) => {
                 <div className="modal" onClick={() => !isUploading && setShowUploadModal(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 className="modal-title">Publicar Clipe</h2>
+                            <h2 className="modal-title">
+                                {selectedClips && selectedClips.length > 1
+                                    ? `Publicar Clipe (${publishingIndex + 1}/${selectedClips.length})`
+                                    : 'Publicar Clipe'}
+                            </h2>
                             <button onClick={() => setShowUploadModal(false)} className="modal-close" disabled={isUploading}>×</button>
                         </div>
 
