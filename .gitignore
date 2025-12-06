@@ -16,3 +16,6 @@ dist/
 
 # Ignorar logs do NPM
 npm-debug.log
+
+# Arquivos do pycharm
+/.idea/*

@@ -105,7 +105,7 @@ const Login = () => {
                         </div>
                     </div>
 
-                    {/* <div className="formOptions">
+                    <div className="formOptions">
                         <label className="checkbox">
                             <input type="checkbox" />
                             <span>Lembrar-me</span>
@@ -113,7 +113,7 @@ const Login = () => {
                         <Link to="/forgot-password" className="forgotLink">
                             Esqueci minha senha
                         </Link>
-                    </div> */}
+                    </div>
 
                     <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
                         {loading ? 'Entrando...' : 'Entrar'}
